@@ -1,426 +1,314 @@
 // ============================================================
-// Periodic Breaker – Element Data Definitions
-// Each element is a brick with unique gameplay mechanics.
+// Periodic Breaker – Element Block Builder
+//
+// 4-layer architecture:
+//   1. elementBaseData   → pure periodic table data (118 elements)
+//   2. categoryRules     → default effect/group/durability per category
+//   3. overrides         → 23 hand-crafted unique elements
+//   4. buildElementBlocks() → merges all layers into final ElementDef[]
 // ============================================================
 
-/** Gameplay role of the element block */
-export type ElementGroup =
-  | "attack"
-  | "defense"
-  | "utility"
-  | "debuff"
-  | "score"
-  | "boss";
+import { BASE_ELEMENTS, type ElementCategory, type BaseElement } from "./elementBaseData";
 
-/** Visual‐effect key (rendered by the VFX layer) */
+// ── Re-exports for backward compatibility ─────────────────
+export type { ElementCategory } from "./elementBaseData";
+
+export type ElementGroup = "attack" | "defense" | "utility" | "debuff" | "score" | "boss";
+
+export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary" | "boss";
+
 export type VfxKey =
-  | "explosion_red"
-  | "explosion_orange"
-  | "chain_lightning"
-  | "fast_explosion"
-  | "shard_splash"
-  | "none"
-  | "sharp_reflect"
-  | "shield_blue"
-  | "lift_white"
-  | "slow_blue"
-  | "powerup_gold"
-  | "neon_bounce"
-  | "trajectory_line"
-  | "trail_fire"
-  | "corrosion_green"
-  | "gas_yellow"
-  | "paddle_shrink"
-  | "freeze_ice"
-  | "flash_white"
-  | "boss_shatter";
+  | "explosion_red" | "explosion_orange" | "chain_lightning" | "fast_explosion"
+  | "shard_splash" | "none" | "sharp_reflect" | "shield_blue"
+  | "lift_white" | "slow_blue" | "powerup_gold" | "neon_bounce"
+  | "trajectory_line" | "trail_fire" | "corrosion_green" | "gas_yellow"
+  | "paddle_shrink" | "freeze_ice" | "flash_white" | "boss_shatter"
+  | "metal_reflect" | "dense_block" | "radiation_burst" | "rare_sparkle"
+  | "conduct_pulse" | "heavy_impact" | "score_glow" | "phase_through";
 
-/** Effect parameter map – union of every effect's params */
 export interface EffectParams {
-  // explosion / chain
   radius?: number;
   chain?: boolean;
   fastTrigger?: boolean;
-  // chain_lightning
   targets?: number;
   range?: number;
-  // shard_splash
   shardCount?: number;
-  // durability override
   durability?: number;
-  // reflect
   reflectMultiplier?: number;
-  // timed effects
   duration?: number;
-  // lift
   upwardBoost?: number;
-  // slow
   slowMultiplier?: number;
-  // ball powerup
   sizeMultiplier?: number;
-  // bounce
   bouncePower?: number;
-  // trajectory
   guideBounces?: number;
-  // trail damage
   interval?: number;
-  // corrosion
   durabilityDown?: number;
-  // gas zone
   zoneHeight?: number;
   paddleSpeedMultiplier?: number;
-  // paddle debuff
   scale?: number;
-  // score
   multiplier?: number;
   bonus?: number;
-  // boss
   clearOnBreak?: boolean;
+  conductBoost?: number;
+  speedReduction?: number;
 }
 
-/** Full element definition – one per brick type */
 export interface ElementDef {
   atomicNumber: number;
   symbol: string;
   name: string;
+  category: ElementCategory;
   group: ElementGroup;
+  rarity: Rarity;
   breakable: boolean;
-  durability: number; // -1 = indestructible
+  durability: number;
   effect: string;
   params: EffectParams;
   vfx: VfxKey;
-  /** Position in the standard 18-column periodic table */
   row: number;
   col: number;
 }
 
 // ────────────────────────────────────────────────────────────
-//  Color palette per group (used by both block renderer & VFX)
+//  Color palette per group
 // ────────────────────────────────────────────────────────────
 
 export const GROUP_COLORS: Record<
   ElementGroup,
   { fill: string; glow: string; text: string; border: string }
 > = {
-  attack: {
-    fill: "#dc2626",
-    glow: "rgba(220,38,38,0.5)",
-    text: "#fecaca",
-    border: "#f87171",
+  attack:  { fill: "#dc2626", glow: "rgba(220,38,38,0.5)",  text: "#fecaca", border: "#f87171" },
+  defense: { fill: "#3b82f6", glow: "rgba(59,130,246,0.5)", text: "#dbeafe", border: "#60a5fa" },
+  utility: { fill: "#8b5cf6", glow: "rgba(139,92,246,0.5)", text: "#ede9fe", border: "#a78bfa" },
+  debuff:  { fill: "#65a30d", glow: "rgba(101,163,13,0.5)", text: "#ecfccb", border: "#84cc16" },
+  score:   { fill: "#eab308", glow: "rgba(234,179,8,0.5)",  text: "#fef9c3", border: "#facc15" },
+  boss:    { fill: "#ea580c", glow: "rgba(234,88,12,0.6)",  text: "#fed7aa", border: "#fb923c" },
+};
+
+// ────────────────────────────────────────────────────────────
+//  Layer 2: Category Rules
+// ────────────────────────────────────────────────────────────
+
+interface CategoryRule {
+  group: ElementGroup;
+  effect: string;
+  vfx: VfxKey;
+  baseDurability: number;
+  /** Durability scales with period: base + floor(period * scale) */
+  durabilityScale: number;
+  baseRarity: Rarity;
+  buildParams: (el: BaseElement) => EffectParams;
+}
+
+const CATEGORY_RULES: Record<ElementCategory, CategoryRule> = {
+  alkali_metal: {
+    group: "attack",
+    effect: "explosion_chain",
+    vfx: "explosion_orange",
+    baseDurability: 1,
+    durabilityScale: 0,
+    baseRarity: "uncommon",
+    buildParams: (el) => ({
+      radius: 80 + el.period * 15,
+      chain: el.period >= 3,
+    }),
   },
-  defense: {
-    fill: "#3b82f6",
-    glow: "rgba(59,130,246,0.5)",
-    text: "#dbeafe",
-    border: "#60a5fa",
+  alkaline_earth_metal: {
+    group: "defense",
+    effect: "shard_splash",
+    vfx: "shard_splash",
+    baseDurability: 1,
+    durabilityScale: 0.3,
+    baseRarity: "common",
+    buildParams: (el) => ({
+      shardCount: 2 + el.period,
+      range: 60 + el.period * 10,
+    }),
   },
-  utility: {
-    fill: "#8b5cf6",
-    glow: "rgba(139,92,246,0.5)",
-    text: "#ede9fe",
-    border: "#a78bfa",
+  transition_metal: {
+    group: "defense",
+    effect: "metal_reflect",
+    vfx: "metal_reflect",
+    baseDurability: 2,
+    durabilityScale: 0.2,
+    baseRarity: "common",
+    buildParams: (el) => ({
+      reflectMultiplier: 1.0 + el.period * 0.05,
+    }),
   },
-  debuff: {
-    fill: "#65a30d",
-    glow: "rgba(101,163,13,0.5)",
-    text: "#ecfccb",
-    border: "#84cc16",
+  post_transition_metal: {
+    group: "score",
+    effect: "score_block",
+    vfx: "score_glow",
+    baseDurability: 1,
+    durabilityScale: 0.2,
+    baseRarity: "common",
+    buildParams: (el) => ({
+      bonus: 50 + el.period * 30,
+    }),
   },
-  score: {
-    fill: "#eab308",
-    glow: "rgba(234,179,8,0.5)",
-    text: "#fef9c3",
-    border: "#facc15",
+  metalloid: {
+    group: "utility",
+    effect: "conduct",
+    vfx: "conduct_pulse",
+    baseDurability: 1,
+    durabilityScale: 0.15,
+    baseRarity: "uncommon",
+    buildParams: (el) => ({
+      conductBoost: 1.1 + el.period * 0.05,
+      range: 100 + el.period * 10,
+    }),
   },
-  boss: {
-    fill: "#ea580c",
-    glow: "rgba(234,88,12,0.6)",
-    text: "#fed7aa",
-    border: "#fb923c",
+  nonmetal: {
+    group: "utility",
+    effect: "state_change",
+    vfx: "none",
+    baseDurability: 1,
+    durabilityScale: 0,
+    baseRarity: "common",
+    buildParams: (el) => ({
+      duration: 1500 + el.period * 200,
+    }),
+  },
+  halogen: {
+    group: "debuff",
+    effect: "corrosion",
+    vfx: "corrosion_green",
+    baseDurability: 1,
+    durabilityScale: 0,
+    baseRarity: "uncommon",
+    buildParams: (el) => ({
+      radius: 80 + el.period * 12,
+      durabilityDown: 1,
+    }),
+  },
+  noble_gas: {
+    group: "utility",
+    effect: "bounce",
+    vfx: "neon_bounce",
+    baseDurability: 1,
+    durabilityScale: 0,
+    baseRarity: "rare",
+    buildParams: (el) => ({
+      bouncePower: 1.1 + el.period * 0.02,
+    }),
+  },
+  lanthanide: {
+    group: "utility",
+    effect: "rare_support",
+    vfx: "rare_sparkle",
+    baseDurability: 1,
+    durabilityScale: 0.1,
+    baseRarity: "rare",
+    buildParams: () => ({
+      duration: 3000,
+      bonus: 200,
+    }),
+  },
+  actinide: {
+    group: "attack",
+    effect: "radiation",
+    vfx: "radiation_burst",
+    baseDurability: 2,
+    durabilityScale: 0.15,
+    baseRarity: "epic",
+    buildParams: (el) => ({
+      radius: 100 + (el.z - 89) * 3,
+      chain: el.z >= 92,
+    }),
   },
 };
 
 // ────────────────────────────────────────────────────────────
-//  Element catalogue  (H → Ca, atomic numbers 1‑20)
+//  Layer 3: Element Overrides (23 hand-crafted elements)
 // ────────────────────────────────────────────────────────────
 
-export const ELEMENTS: ElementDef[] = [
-  // ── ATTACK ──────────────────────────────────────────────
-  {
-    atomicNumber: 1,
-    symbol: "H",
-    name: "Hydrogen",
-    group: "attack",
-    breakable: true,
-    durability: 1,
-    effect: "explosion",
-    params: { radius: 100, chain: false },
-    vfx: "explosion_red",
-    row: 1,
-    col: 1,
-  },
-  {
-    atomicNumber: 3,
-    symbol: "Li",
-    name: "Lithium",
-    group: "attack",
-    breakable: true,
-    durability: 1,
-    effect: "chain_lightning",
-    params: { targets: 2, range: 160 },
-    vfx: "chain_lightning",
-    row: 2,
-    col: 1,
-  },
-  {
-    atomicNumber: 11,
-    symbol: "Na",
-    name: "Sodium",
-    group: "attack",
-    breakable: true,
-    durability: 1,
-    effect: "explosion_chain",
-    params: { radius: 140, chain: true },
-    vfx: "explosion_orange",
-    row: 3,
-    col: 1,
-  },
-  {
-    atomicNumber: 19,
-    symbol: "K",
-    name: "Potassium",
-    group: "attack",
-    breakable: true,
-    durability: 1,
-    effect: "fast_chain_explosion",
-    params: { radius: 170, chain: true, fastTrigger: true },
-    vfx: "fast_explosion",
-    row: 4,
-    col: 1,
-  },
+type PartialOverride = Partial<Pick<ElementDef, "group" | "effect" | "vfx" | "durability" | "rarity" | "breakable">> & { params?: EffectParams };
 
-  // ── DEFENSE ─────────────────────────────────────────────
-  {
-    atomicNumber: 4,
-    symbol: "Be",
-    name: "Beryllium",
-    group: "defense",
-    breakable: true,
-    durability: 2,
-    effect: "shard_splash",
-    params: { shardCount: 4, range: 80 },
-    vfx: "shard_splash",
-    row: 2,
-    col: 2,
-  },
-  {
-    atomicNumber: 6,
-    symbol: "C",
-    name: "Carbon",
-    group: "defense",
-    breakable: true,
-    durability: 3,
-    effect: "none",
-    params: {},
-    vfx: "none",
-    row: 2,
-    col: 14,
-  },
-  {
-    atomicNumber: 13,
-    symbol: "Al",
-    name: "Aluminum",
-    group: "defense",
-    breakable: true,
-    durability: 2,
-    effect: "sharp_reflect",
-    params: { reflectMultiplier: 1.25 },
-    vfx: "sharp_reflect",
-    row: 3,
-    col: 13,
-  },
-  {
-    atomicNumber: 18,
-    symbol: "Ar",
-    name: "Argon",
-    group: "defense",
-    breakable: true,
-    durability: 1,
-    effect: "floor_shield",
-    params: { duration: 4000 },
-    vfx: "shield_blue",
-    row: 3,
-    col: 18,
-  },
+const OVERRIDES: Record<number, PartialOverride> = {
+  // ── ATTACK ──
+  1:  { group: "attack",  effect: "explosion",              vfx: "explosion_red",    params: { radius: 100, chain: false } },
+  3:  { group: "attack",  effect: "chain_lightning",        vfx: "chain_lightning",  params: { targets: 2, range: 160 } },
+  11: { group: "attack",  effect: "explosion_chain",        vfx: "explosion_orange", params: { radius: 140, chain: true } },
+  19: { group: "attack",  effect: "fast_chain_explosion",   vfx: "fast_explosion",   params: { radius: 170, chain: true, fastTrigger: true } },
+  92: { group: "attack",  effect: "radiation",              vfx: "radiation_burst",  rarity: "legendary", durability: 3, params: { radius: 180, chain: true } },
+  94: { group: "attack",  effect: "fast_chain_explosion",   vfx: "radiation_burst",  rarity: "legendary", durability: 3, params: { radius: 200, chain: true, fastTrigger: true } },
 
-  // ── UTILITY ─────────────────────────────────────────────
-  {
-    atomicNumber: 2,
-    symbol: "He",
-    name: "Helium",
-    group: "utility",
-    breakable: true,
-    durability: 1,
-    effect: "lift",
-    params: { upwardBoost: 1.5, duration: 1200 },
-    vfx: "lift_white",
-    row: 1,
-    col: 18,
-  },
-  {
-    atomicNumber: 5,
-    symbol: "B",
-    name: "Boron",
-    group: "utility",
-    breakable: true,
-    durability: 1,
-    effect: "slow_control",
-    params: { slowMultiplier: 0.75, duration: 1500 },
-    vfx: "slow_blue",
-    row: 2,
-    col: 13,
-  },
-  {
-    atomicNumber: 8,
-    symbol: "O",
-    name: "Oxygen",
-    group: "utility",
-    breakable: true,
-    durability: 1,
-    effect: "ball_powerup",
-    params: { sizeMultiplier: 1.3, duration: 2500 },
-    vfx: "powerup_gold",
-    row: 2,
-    col: 16,
-  },
-  {
-    atomicNumber: 10,
-    symbol: "Ne",
-    name: "Neon",
-    group: "utility",
-    breakable: true,
-    durability: 1,
-    effect: "bounce",
-    params: { bouncePower: 1.15 },
-    vfx: "neon_bounce",
-    row: 2,
-    col: 18,
-  },
-  {
-    atomicNumber: 14,
-    symbol: "Si",
-    name: "Silicon",
-    group: "utility",
-    breakable: true,
-    durability: 1,
-    effect: "trajectory_guide",
-    params: { duration: 4000, guideBounces: 3 },
-    vfx: "trajectory_line",
-    row: 3,
-    col: 14,
-  },
-  {
-    atomicNumber: 15,
-    symbol: "P",
-    name: "Phosphorus",
-    group: "utility",
-    breakable: true,
-    durability: 1,
-    effect: "trail_damage",
-    params: { duration: 2000, interval: 120 },
-    vfx: "trail_fire",
-    row: 3,
-    col: 15,
-  },
+  // ── DEFENSE ──
+  4:  { group: "defense",  effect: "shard_splash",   vfx: "shard_splash",   durability: 2, params: { shardCount: 4, range: 80 } },
+  6:  { group: "defense",  effect: "none",           vfx: "none",           durability: 3, rarity: "rare" },
+  13: { group: "defense",  effect: "sharp_reflect",  vfx: "sharp_reflect",  durability: 2, params: { reflectMultiplier: 1.25 } },
+  26: { group: "defense",  effect: "metal_reflect",  vfx: "metal_reflect",  durability: 3, rarity: "rare", params: { reflectMultiplier: 1.3 } },
+  47: { group: "defense",  effect: "sharp_reflect",  vfx: "sharp_reflect",  durability: 2, rarity: "epic", params: { reflectMultiplier: 1.35 } },
+  82: { group: "defense",  effect: "heavy_block",    vfx: "heavy_impact",   durability: 4, rarity: "epic", params: { speedReduction: 0.7 } },
 
-  // ── DEBUFF ──────────────────────────────────────────────
-  {
-    atomicNumber: 9,
-    symbol: "F",
-    name: "Fluorine",
-    group: "debuff",
-    breakable: true,
-    durability: 1,
-    effect: "corrosion",
-    params: { radius: 120, durabilityDown: 1 },
-    vfx: "corrosion_green",
-    row: 2,
-    col: 17,
-  },
-  {
-    atomicNumber: 16,
-    symbol: "S",
-    name: "Sulfur",
-    group: "debuff",
-    breakable: true,
-    durability: 1,
-    effect: "gas_zone",
-    params: {
-      zoneHeight: 100,
-      duration: 3000,
-      paddleSpeedMultiplier: 0.8,
-    },
-    vfx: "gas_yellow",
-    row: 3,
-    col: 16,
-  },
-  {
-    atomicNumber: 17,
-    symbol: "Cl",
-    name: "Chlorine",
-    group: "debuff",
-    breakable: true,
-    durability: 1,
-    effect: "paddle_debuff",
-    params: { scale: 0.8, duration: 3000 },
-    vfx: "paddle_shrink",
-    row: 3,
-    col: 17,
-  },
+  // ── UTILITY ──
+  2:  { group: "utility",  effect: "lift",             vfx: "lift_white",      params: { upwardBoost: 1.5, duration: 1200 } },
+  5:  { group: "utility",  effect: "slow_control",     vfx: "slow_blue",       params: { slowMultiplier: 0.75, duration: 1500 } },
+  8:  { group: "utility",  effect: "ball_powerup",     vfx: "powerup_gold",    params: { sizeMultiplier: 1.3, duration: 2500 } },
+  10: { group: "utility",  effect: "bounce",           vfx: "neon_bounce",     params: { bouncePower: 1.15 } },
+  14: { group: "utility",  effect: "trajectory_guide", vfx: "trajectory_line", params: { duration: 4000, guideBounces: 3 } },
+  15: { group: "utility",  effect: "trail_damage",     vfx: "trail_fire",      params: { duration: 2000, interval: 120 } },
+  18: { group: "defense",  effect: "floor_shield",     vfx: "shield_blue",     params: { duration: 4000 } },
+  29: { group: "utility",  effect: "conduct",          vfx: "conduct_pulse",   rarity: "rare", params: { conductBoost: 1.3, range: 150 } },
+  80: { group: "debuff",   effect: "slippery",         vfx: "none",            rarity: "rare", params: { duration: 2500 } },
 
-  // ── SCORE ───────────────────────────────────────────────
-  {
-    atomicNumber: 7,
-    symbol: "N",
-    name: "Nitrogen",
-    group: "score",
-    breakable: true,
-    durability: 1,
-    effect: "freeze_score",
-    params: { radius: 120, multiplier: 1.5, duration: 3000 },
-    vfx: "freeze_ice",
-    row: 2,
-    col: 15,
-  },
-  {
-    atomicNumber: 12,
-    symbol: "Mg",
-    name: "Magnesium",
-    group: "score",
-    breakable: true,
-    durability: 1,
-    effect: "flash_bonus",
-    params: { bonus: 500 },
-    vfx: "flash_white",
-    row: 3,
-    col: 2,
-  },
+  // ── DEBUFF ──
+  9:  { group: "debuff", effect: "corrosion",     vfx: "corrosion_green", params: { radius: 120, durabilityDown: 1 } },
+  16: { group: "debuff", effect: "gas_zone",      vfx: "gas_yellow",      params: { zoneHeight: 100, duration: 3000, paddleSpeedMultiplier: 0.8 } },
+  17: { group: "debuff", effect: "paddle_debuff", vfx: "paddle_shrink",   params: { scale: 0.8, duration: 3000 } },
 
-  // ── BOSS ────────────────────────────────────────────────
-  {
-    atomicNumber: 20,
-    symbol: "Ca",
-    name: "Calcium",
-    group: "boss",
-    breakable: true,
-    durability: 5,
-    effect: "boss_core",
-    params: { durability: 5, clearOnBreak: true },
-    vfx: "boss_shatter",
-    row: 4,
-    col: 2,
-  },
-];
+  // ── SCORE ──
+  7:  { group: "score", effect: "freeze_score", vfx: "freeze_ice",  params: { radius: 120, multiplier: 1.5, duration: 3000 } },
+  12: { group: "score", effect: "flash_bonus",  vfx: "flash_white", params: { bonus: 500 } },
+  79: { group: "score", effect: "flash_bonus",  vfx: "flash_white", rarity: "legendary", params: { bonus: 2000 } },
 
-/** Only blocks that count toward stage-clear progress */
+  // ── BOSS ──
+  20: { group: "boss", effect: "boss_core", vfx: "boss_shatter", durability: 5, rarity: "boss", params: { clearOnBreak: true } },
+};
+
+// ────────────────────────────────────────────────────────────
+//  Layer 4: buildElementBlocks()
+// ────────────────────────────────────────────────────────────
+
+function computeRarity(base: Rarity, z: number): Rarity {
+  if (z > 103) return "epic";
+  if (z > 86) return base === "common" ? "uncommon" : base;
+  return base;
+}
+
+function computeDurability(rule: CategoryRule, el: BaseElement): number {
+  return Math.max(1, rule.baseDurability + Math.floor(el.period * rule.durabilityScale));
+}
+
+export function buildElementBlocks(): ElementDef[] {
+  return BASE_ELEMENTS.map((el) => {
+    const rule = CATEGORY_RULES[el.category];
+    const over = OVERRIDES[el.z];
+
+    // Start from category rule defaults
+    const def: ElementDef = {
+      atomicNumber: el.z,
+      symbol: el.symbol,
+      name: el.name,
+      category: el.category,
+      group: over?.group ?? rule.group,
+      rarity: over?.rarity ?? computeRarity(rule.baseRarity, el.z),
+      breakable: over?.breakable ?? true,
+      durability: over?.durability ?? computeDurability(rule, el),
+      effect: over?.effect ?? rule.effect,
+      params: over?.params ?? rule.buildParams(el),
+      vfx: over?.vfx ?? rule.vfx,
+      row: el.row,
+      col: el.col,
+    };
+
+    return def;
+  });
+}
+
+// ── Exported constants ────────────────────────────────────
+
+export const ELEMENTS = buildElementBlocks();
+
 export const DESTROYABLE_COUNT = ELEMENTS.filter((e) => e.breakable).length;

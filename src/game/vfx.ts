@@ -151,6 +151,59 @@ export class VfxManager {
         this.spawnShards(x, y, 12, 150);
         this.flashes.push({ color: "rgba(234,88,12,0.3)", alpha: 0.6, decay: 0.015 });
         break;
+      // ── New category-based VFX ──
+      case "metal_reflect":
+        this.spawnSparks(x, y, 5, "#94a3b8");
+        this.spawnSparks(x, y, 3, "#cbd5e1");
+        break;
+      case "dense_block":
+        this.spawnSparks(x, y, 4, "#a1a1aa");
+        break;
+      case "radiation_burst":
+        this.spawnExplosion(x, y, "#a3e635", "#4ade80", extra?.radius as number ?? 130);
+        this.spawnRing(x, y, "#a3e635", 35);
+        this.flashes.push({ color: "rgba(163,230,53,0.1)", alpha: 0.3, decay: 0.02 });
+        break;
+      case "rare_sparkle": {
+        this.spawnSparks(x, y, 10, "#c084fc");
+        this.spawnSparks(x, y, 6, "#e879f9");
+        this.spawnRing(x, y, "#c084fc", 20);
+        const rb = extra?.bonus as number;
+        if (rb) {
+          this.particles.push({
+            x, y, vx: 0, vy: -1.5,
+            life: 45, maxLife: 45,
+            color: "#e879f9", size: 12,
+            type: "text", text: `+${rb}`,
+          });
+        }
+        break;
+      }
+      case "conduct_pulse":
+        this.spawnRing(x, y, "#fbbf24", extra?.range as number ?? 120 * 0.3);
+        this.spawnSparks(x, y, 6, "#fbbf24");
+        break;
+      case "heavy_impact":
+        this.spawnShards(x, y, 6, 60);
+        this.spawnSparks(x, y, 4, "#71717a");
+        break;
+      case "score_glow": {
+        this.spawnSparks(x, y, 6, "#facc15");
+        const sb = extra?.bonus as number;
+        if (sb) {
+          this.particles.push({
+            x, y, vx: 0, vy: -1.3,
+            life: 40, maxLife: 40,
+            color: "#facc15", size: 11,
+            type: "text", text: `+${sb}`,
+          });
+        }
+        break;
+      }
+      case "phase_through":
+        this.spawnRing(x, y, "#38bdf8", 25);
+        this.spawnSparks(x, y, 5, "#7dd3fc");
+        break;
       case "none":
       default:
         break;

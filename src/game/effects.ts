@@ -396,3 +396,115 @@ register("boss_core", (block, state) => {
     state.stageClear = true;
   }
 });
+
+// ────────────────────────────────────────────────────────────
+//  Category-based effects (auto-generated elements)
+// ────────────────────────────────────────────────────────────
+
+/** Transition metal: reflect ball with slight angle change */
+register("metal_reflect", (block, state) => {
+  const mult = block.params.reflectMultiplier ?? 1.1;
+  state.ball.vx *= mult;
+  const sp = state.ball.speed;
+  const mag = Math.sqrt(state.ball.vx ** 2 + state.ball.vy ** 2);
+  if (mag > 0) {
+    state.ball.vx = (state.ball.vx / mag) * sp;
+    state.ball.vy = (state.ball.vy / mag) * sp;
+  }
+  state.spawnVfx("metal_reflect", block.x, block.y);
+});
+
+/** Post-transition metal: small score bonus on break */
+register("score_block", (block, state) => {
+  const bonus = block.params.bonus ?? 100;
+  state.addScore(bonus);
+  state.spawnVfx("score_glow", block.x, block.y, { bonus });
+});
+
+/** Metalloid: conduct – boost nearby block damage by 1 */
+register("conduct", (block, state) => {
+  const range = block.params.range ?? 120;
+  state.spawnVfx("conduct_pulse", block.x, block.y, { range });
+  const nearby = nearbyBlocks(state, block.x, block.y, range, block);
+  for (const nb of nearby) {
+    nb.hp -= 1;
+    if (nb.hp <= 0 && nb.alive) {
+      state.chainDepth += 1;
+      state.destroyBlock(nb);
+    }
+  }
+});
+
+/** Nonmetal: generic state change – slight ball speed boost */
+register("state_change", (block, state) => {
+  const dur = block.params.duration ?? 2000;
+  state.ball.speed = state.ball.baseSpeed * 1.1;
+  state.spawnVfx("none", block.x, block.y);
+  state.timedEffects.push({
+    key: "state_change",
+    endTime: state.now + dur,
+    revert: () => { state.ball.speed = state.ball.baseSpeed; },
+  });
+});
+
+/** Lanthanide: rare support – score bonus + brief ball powerup */
+register("rare_support", (block, state) => {
+  const bonus = block.params.bonus ?? 200;
+  const dur = block.params.duration ?? 3000;
+  state.addScore(bonus);
+  state.ball.radius = state.ball.baseRadius * 1.15;
+  state.spawnVfx("rare_sparkle", block.x, block.y, { bonus });
+  state.timedEffects.push({
+    key: "rare_support",
+    endTime: state.now + dur,
+    revert: () => { state.ball.radius = state.ball.baseRadius; },
+  });
+});
+
+/** Actinide: radiation – area damage like explosion */
+register("radiation", (block, state) => {
+  const r = block.params.radius ?? 130;
+  state.spawnVfx("radiation_burst", block.x, block.y, { radius: r });
+  const nearby = nearbyBlocks(state, block.x, block.y, r, block);
+  for (const nb of nearby) {
+    nb.hp -= 1;
+    if (nb.hp <= 0 && nb.alive) {
+      state.chainDepth += 1;
+      state.destroyBlock(nb);
+    }
+  }
+});
+
+/** Heavy block (Pb): slows ball on hit */
+register("heavy_block", (block, state) => {
+  const reduction = block.params.speedReduction ?? 0.7;
+  const dur = 2000;
+  state.ball.speed = state.ball.baseSpeed * reduction;
+  state.spawnVfx("heavy_impact", block.x, block.y);
+  state.timedEffects.push({
+    key: "heavy_block",
+    endTime: state.now + dur,
+    revert: () => { state.ball.speed = state.ball.baseSpeed; },
+  });
+});
+
+/** Slippery (Hg): random slight angle distortion */
+register("slippery", (block, state) => {
+  const dur = block.params.duration ?? 2500;
+  // Random angle shift
+  const angle = (Math.random() - 0.5) * 0.4;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const nvx = state.ball.vx * cos - state.ball.vy * sin;
+  const nvy = state.ball.vx * sin + state.ball.vy * cos;
+  state.ball.vx = nvx;
+  state.ball.vy = nvy;
+  state.spawnVfx("none", block.x, block.y);
+  // Brief speed wobble
+  state.ball.speed = state.ball.baseSpeed * 0.9;
+  state.timedEffects.push({
+    key: "slippery",
+    endTime: state.now + dur,
+    revert: () => { state.ball.speed = state.ball.baseSpeed; },
+  });
+});

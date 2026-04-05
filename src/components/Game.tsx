@@ -6,15 +6,14 @@ import {
   ELEMENTS,
   DESTROYABLE_COUNT,
   GROUP_COLORS,
-  type ElementDef,
   type VfxKey,
 } from "@/game/elements";
 import { executeEffect, type BlockRuntime, type GameState } from "@/game/effects";
 import { VfxManager } from "@/game/vfx";
 
 // ── Constants ─────────────────────────────────────────────
-const GW = 480;
-const GH = 640;
+const GW = 560;
+const GH = 780;
 const PADDLE_W = 100;
 const PADDLE_H = 14;
 const BALL_R = 8;
@@ -22,19 +21,28 @@ const WALL_T = 20;
 const LIVES = 3;
 const BASE_SPEED = 6;
 const COLS = 18;
-const BG = 2;
-const BM = 6;
+const BG = 1;
+const BM = 4;
 const BW = Math.floor((GW - BM * 2 - (COLS - 1) * BG) / COLS);
-const BH = 30;
-const BT = 30;
+const BH = 22;
+const BT = 20; // top offset
+const LN_GAP = 8; // extra gap before lanthanide/actinide rows
 const CAT = { WALL: 0x0001, PADDLE: 0x0002, BALL: 0x0004, BLOCK: 0x0008 };
 const CHAIN_BONUS = 50; // extra per chain depth
 
 // ── Helpers ───────────────────────────────────────────────
 function blockPos(row: number, col: number) {
+  // Rows 1-7 are the main table, rows 8-9 are Ln/Ac with extra gap
+  let y: number;
+  if (row <= 7) {
+    y = BT + (row - 1) * (BH + BG) + BH / 2;
+  } else {
+    // row 8 = lanthanides, row 9 = actinides (below main table with gap)
+    y = BT + 7 * (BH + BG) + LN_GAP + (row - 8) * (BH + BG) + BH / 2;
+  }
   return {
     x: BM + (col - 1) * (BW + BG) + BW / 2,
-    y: BT + (row - 1) * (BH + BG) + BH / 2,
+    y,
   };
 }
 
@@ -501,18 +509,18 @@ export default function Game() {
           ctx.stroke();
         }
 
-        // Atomic number
+        // Atomic number (top-left, tiny)
         ctx.fillStyle = colors.text;
-        ctx.globalAlpha = 0.5;
-        ctx.font = "bold 7px sans-serif";
+        ctx.globalAlpha = 0.45;
+        ctx.font = "bold 6px sans-serif";
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
-        ctx.fillText(String(el.atomicNumber), bx + 2, by + 2);
+        ctx.fillText(String(el.atomicNumber), bx + 1, by + 1);
         ctx.globalAlpha = 1;
 
-        // Symbol
+        // Symbol (center)
         ctx.fillStyle = colors.text;
-        ctx.font = "bold 13px sans-serif";
+        ctx.font = "bold 10px sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(el.symbol, blk.x, blk.y + 2);
@@ -659,7 +667,7 @@ export default function Game() {
       </h1>
 
       {/* HUD */}
-      <div className="flex items-center justify-between w-full max-w-[480px] px-2 text-sm">
+      <div className="flex items-center justify-between w-full max-w-[560px] px-2 text-sm">
         <div className="flex items-center gap-2">
           <span className="text-zinc-400 uppercase tracking-wide">Lives</span>
           <div className="flex gap-1">
@@ -683,7 +691,7 @@ export default function Game() {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap justify-center gap-2.5 text-xs max-w-[480px]">
+      <div className="flex flex-wrap justify-center gap-2.5 text-xs max-w-[560px]">
         {legend.map((l) => (
           <span key={l.label} className="flex items-center gap-1">
             <span className="w-2.5 h-2.5 rounded-sm" style={{ background: l.color }} />
@@ -703,8 +711,8 @@ export default function Game() {
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-none">
             {stageClear ? (
               <>
-                <p className="text-3xl font-bold text-emerald-400 mb-1">Stage 1 Clear!</p>
-                <p className="text-zinc-300 mb-4">20번 칼슘까지 정복했습니다</p>
+                <p className="text-3xl font-bold text-emerald-400 mb-1">Stage Clear!</p>
+                <p className="text-zinc-300 mb-4">118개 원소를 모두 정복했습니다!</p>
                 <p className="text-zinc-400 mb-4">Final Score: <span className="text-indigo-400 font-bold">{score}</span></p>
                 <button onClick={restartGame}
                   className="pointer-events-auto px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-colors shadow-[0_0_20px_rgba(16,185,129,0.3)]">
