@@ -1350,9 +1350,11 @@ export default function Game() {
                     <button onClick={async () => {
                       if (!playerName.trim()) return;
                       await saveRank({ name: playerName.trim(), score, level, discovered: collected.size });
-                      setRankSaved(true);
+                      // Small delay for Firebase to propagate
+                      await new Promise(res => setTimeout(res, 500));
                       const r = await getTopRanks(10);
                       setRankings(r);
+                      setRankSaved(true);
                     }}
                       className="px-3 py-1 text-sm bg-yellow-600 hover:bg-yellow-500 text-white font-semibold rounded transition-colors">
                       등록
@@ -1362,6 +1364,7 @@ export default function Game() {
                   <div className="w-full max-w-[280px] mb-2">
                     <p className="text-xs text-emerald-400 mb-1 text-center">랭킹 등록 완료!</p>
                     <div className="bg-zinc-900 rounded border border-zinc-700 overflow-hidden">
+                      {rankings.length === 0 && <p className="text-[10px] text-zinc-500 text-center py-2">불러오는 중...</p>}
                       {rankings.map((r, i) => (
                         <div key={i} className={`flex items-center justify-between px-2 py-1 text-[10px] ${r.name === playerName.trim() ? "bg-indigo-900/40" : ""}`}>
                           <div className="flex items-center gap-1.5">

@@ -3,7 +3,7 @@
 // ============================================================
 
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, push, query, orderByChild, limitToLast, get } from "firebase/database";
+import { getDatabase, ref, push, get } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB9zBeqnYsckglsUuWcKOZuuHddfBf6Aro",
@@ -40,15 +40,14 @@ export async function saveRank(entry: Omit<RankEntry, "timestamp">): Promise<voi
 export async function getTopRanks(n: number = 10): Promise<RankEntry[]> {
   try {
     const rankRef = ref(db, "rankings");
-    const q = query(rankRef, orderByChild("score"), limitToLast(n));
-    const snapshot = await get(q);
+    const snapshot = await get(rankRef);
     if (!snapshot.exists()) return [];
     const entries: RankEntry[] = [];
     snapshot.forEach((child) => {
       entries.push(child.val() as RankEntry);
     });
-    // Sort descending (limitToLast gives ascending)
-    return entries.sort((a, b) => b.score - a.score);
+    // Sort by score descending, take top N
+    return entries.sort((a, b) => b.score - a.score).slice(0, n);
   } catch (e) {
     console.error("Failed to get ranks:", e);
     return [];
