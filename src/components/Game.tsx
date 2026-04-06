@@ -35,8 +35,14 @@ const BASE_SPEED = 6;
 // Level configs
 const LEVEL_TIMES = [420, 300, 180]; // L1: 7min, L2: 5min, L3: 3min
 const LEVEL_SPEED = [BASE_SPEED, BASE_SPEED * 1.4, BASE_SPEED * 1.8]; // L1, L2, L3
-const LEVEL_BG: string[] = ["#0f0f1a", "#0f1a14", "#1a0f1a"]; // dark blue, dark green, dark purple
-const LEVEL_BLOCK_ALPHA: number[] = [1, 1.2, 1.4]; // block color intensity multiplier
+// Level color themes: [hue-shift in degrees, saturation-boost, brightness-boost]
+// L1: original, L2: red/warm shift, L3: blue/ice shift
+type LevelTheme = { hueShift: number; tintR: number; tintG: number; tintB: number };
+const LEVEL_THEMES: LevelTheme[] = [
+  { hueShift: 0, tintR: 0, tintG: 0, tintB: 0 },        // L1: original colors
+  { hueShift: 0, tintR: 60, tintG: -20, tintB: -30 },    // L2: red/warm tint
+  { hueShift: 0, tintR: -30, tintG: -10, tintB: 60 },    // L3: blue/ice tint
+];
 const COLS = 18;
 const BG = 1;
 const BM = 4;
@@ -57,6 +63,17 @@ interface FloatingText {
 }
 
 // ── Helpers ───────────────────────────────────────────────
+/** Apply level theme tint to a hex color */
+function tintColor(hex: string, theme: LevelTheme): string {
+  if (theme.tintR === 0 && theme.tintG === 0 && theme.tintB === 0) return hex;
+  const m = hex.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+  if (!m) return hex;
+  const r = Math.max(0, Math.min(255, parseInt(m[1], 16) + theme.tintR));
+  const g = Math.max(0, Math.min(255, parseInt(m[2], 16) + theme.tintG));
+  const b = Math.max(0, Math.min(255, parseInt(m[3], 16) + theme.tintB));
+  return `rgb(${r},${g},${b})`;
+}
+
 function blockPos(row: number, col: number) {
   // Rows 1-7 are the main table, rows 8-9 are Ln/Ac with extra gap
   let y: number;
@@ -774,7 +791,7 @@ export default function Game() {
       }
 
       // BG
-      ctx.fillStyle = LEVEL_BG[levelRef.current - 1] ?? "#0f0f1a";
+      ctx.fillStyle = "#0f0f1a";
       ctx.fillRect(0, 0, GW, GH);
 
       // Grid
@@ -799,7 +816,14 @@ export default function Game() {
       for (const blk of blocksRef.current) {
         if (!blk.alive) continue;
         const el = ELEMENTS.find((e) => e.atomicNumber === blk.id)!;
-        const colors = GROUP_COLORS[el.group];
+        const baseColors = GROUP_COLORS[el.group];
+        const theme = LEVEL_THEMES[levelRef.current - 1] ?? LEVEL_THEMES[0];
+        const colors = {
+          fill: tintColor(baseColors.fill, theme),
+          glow: baseColors.glow,
+          text: tintColor(baseColors.text, theme),
+          border: tintColor(baseColors.border, theme),
+        };
         const bx = blk.x - BW / 2;
         const by = blk.y - BH / 2;
 
@@ -808,12 +832,11 @@ export default function Game() {
 
         // Opacity based on remaining HP (fades as damaged)
         const hpRatio = el.durability > 1 ? blk.hp / el.durability : 1;
-        const blockAlpha = 0.35 + hpRatio * 0.65; // range: 0.35 (near death) → 1.0 (full)
+        const blockAlpha = 0.35 + hpRatio * 0.65;
         ctx.globalAlpha = blockAlpha;
 
-        // Glow — intensifies per level
-        const lvGlow = LEVEL_BLOCK_ALPHA[levelRef.current - 1] ?? 1;
-        ctx.shadowBlur = 8 * lvGlow;
+        // Glow
+        ctx.shadowBlur = 8;
         ctx.shadowColor = isFrozen ? "rgba(56,189,248,0.6)" : colors.glow;
 
         // Fill
