@@ -935,14 +935,15 @@ export default function Game() {
           Periodic Breaker
         </h1>
         <p className="text-zinc-400 text-sm sm:text-base">난이도를 선택하세요</p>
-        <div className="flex gap-3">
-          {([["easy", "Easy", "#22c55e"],
-             ["normal", "Normal", "#3b82f6"],
-             ["hard", "Hard", "#ef4444"]] as const).map(([key, label, color]) => (
+        <div className="flex flex-col gap-3 w-full max-w-[260px]">
+          {([["easy", "Easy", "#22c55e", 130],
+             ["normal", "Normal", "#3b82f6", 100],
+             ["hard", "Hard", "#ef4444", 70]] as const).map(([key, label, color, pw]) => (
             <button key={key} onClick={() => startWithDifficulty(key)}
-              className="px-6 py-3 rounded-lg border border-zinc-700 hover:border-zinc-500 bg-zinc-900 hover:bg-zinc-800 transition-colors"
+              className="flex flex-col items-center gap-2 py-4 rounded-lg border border-zinc-700 hover:border-zinc-500 bg-zinc-900 hover:bg-zinc-800 transition-colors"
             >
               <span className="font-bold text-lg" style={{ color }}>{label}</span>
+              <div className="h-3 rounded-full" style={{ width: `${pw}px`, background: color, opacity: 0.6 }} />
             </button>
           ))}
         </div>
@@ -968,11 +969,6 @@ export default function Game() {
               }`} />
             ))}
           </div>
-          {combo >= 2 && (
-            <span className={`font-mono font-bold ${combo >= 5 ? "text-yellow-400" : "text-orange-400"}`}>
-              x{combo}
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-1">
