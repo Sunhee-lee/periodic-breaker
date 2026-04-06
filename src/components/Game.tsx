@@ -229,7 +229,6 @@ export default function Game() {
     });
     launchedRef.current = true;
     setLaunched(true);
-    startBGM(levelRef.current);
   }, []);
 
   const restartGame = useCallback(() => {
@@ -1064,11 +1063,20 @@ export default function Game() {
       Matter.Body.setPosition(paddleRef.current, { x: cx, y: paddleRef.current.position.y });
     };
     const onMM = (e: MouseEvent) => movePad(getX(e.clientX));
-    const onMD = (e: MouseEvent) => { movePad(getX(e.clientX)); if (!launchedRef.current && !goRef.current && !clearRef.current) launchBall(); };
+    const onMD = (e: MouseEvent) => {
+      movePad(getX(e.clientX));
+      if (!launchedRef.current && !goRef.current && !clearRef.current) {
+        startBGM(levelRef.current); // must be in direct user event handler
+        launchBall();
+      }
+    };
     const onTS = (e: TouchEvent) => {
       e.preventDefault(); draggingRef.current = true;
       movePad(getX(e.touches[0].clientX));
-      if (!launchedRef.current && !goRef.current && !clearRef.current) launchBall();
+      if (!launchedRef.current && !goRef.current && !clearRef.current) {
+        startBGM(levelRef.current); // must be in direct user event handler
+        launchBall();
+      }
     };
     const onTM = (e: TouchEvent) => { e.preventDefault(); if (draggingRef.current) movePad(getX(e.touches[0].clientX)); };
     const onTE = (e: TouchEvent) => { e.preventDefault(); draggingRef.current = false; };
