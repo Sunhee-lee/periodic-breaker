@@ -33,7 +33,7 @@ const MULTIBALL_ELEMENTS = new Set([118, 117, 116]); // Og, Ts, Lv
 const BASE_SPEED = 6;
 
 // Level configs
-const LEVEL_TIME = 300; // 5 minutes per level
+const LEVEL_TIME = 420; // 7 minutes per level
 const LEVEL_SPEED = [BASE_SPEED, BASE_SPEED * 1.4, BASE_SPEED * 1.8]; // L1, L2, L3
 const LEVEL_BG: string[] = ["#0f0f1a", "#0f1a14", "#1a0f1a"]; // dark blue, dark green, dark purple
 const LEVEL_BLOCK_ALPHA: number[] = [1, 1.2, 1.4]; // block color intensity multiplier
@@ -445,8 +445,12 @@ export default function Game() {
           life: 180, maxLife: 180,
           color: colors?.border ?? "#ffffff",
         });
-        // Combo text — separate, top-right area
+        // Combo text — replace previous combo text instead of stacking
         if (comboLevel >= 2) {
+          // Remove any existing combo texts
+          for (let i = existingTexts.length - 1; i >= 0; i--) {
+            if (existingTexts[i].text.includes("COMBO")) existingTexts.splice(i, 1);
+          }
           existingTexts.push({
             text: `x${comboLevel} COMBO!`,
             x: GW - 70, y: GH - 80,
