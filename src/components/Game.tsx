@@ -134,8 +134,9 @@ export default function Game() {
   const [combo, setCombo] = useState(0);
   const [collected, setCollected] = useState<Set<number>>(new Set());
   const [levelCollected, setLevelCollected] = useState<Set<number>>(new Set());
-  const [showCollection, setShowCollection] = useState(false);
+
   const [bgmVol, setBgmVol] = useState(0.3);
+  const [showVolume, setShowVolume] = useState(false);
   const [level, setLevel] = useState(1);
   const [timeLeft, setTimeLeft] = useState(LEVEL_TIMES[0]);
 
@@ -1175,22 +1176,26 @@ export default function Game() {
       {launched && (
         <div className="flex items-center justify-between w-full px-1 mb-1 text-xs">
           <button onClick={() => { stopBGM(); restartGame(); setDifficulty(null); }}
-            className="px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400">
-            ← 돌아가기
+            className="w-7 h-7 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400 text-sm">
+            ←
           </button>
-          <div className="flex items-center gap-2">
-            <span className="text-zinc-500">♪</span>
-            <input type="range" min="0" max="100" value={Math.round(bgmVol * 100)}
-              onChange={(e) => { const v = Number(e.target.value) / 100; setBgmVol(v); setBGMVolume(v); }}
-              className="w-16 sm:w-20 h-1 accent-indigo-500" />
-          </div>
-          {!gameOver && !stageClear && !paused && (
-            <button onClick={togglePause}
-              className="px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400">
-              일시정지
+          <div className="flex items-center gap-1">
+            <button onClick={() => setShowVolume(!showVolume)}
+              className="w-7 h-7 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400 text-sm">
+              {bgmVol > 0 ? "♪" : "♪̸"}
             </button>
-          )}
-          {(gameOver || stageClear || paused) && <div className="w-16" />}
+            {showVolume && (
+              <input type="range" min="0" max="100" value={Math.round(bgmVol * 100)}
+                onChange={(e) => { const v = Number(e.target.value) / 100; setBgmVol(v); setBGMVolume(v); }}
+                className="w-20 h-1 accent-indigo-500" />
+            )}
+          </div>
+          {!gameOver && !stageClear && !paused ? (
+            <button onClick={togglePause}
+              className="w-7 h-7 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400">
+              <svg width="10" height="10" viewBox="0 0 14 14" fill="currentColor"><rect x="2" y="1" width="3.5" height="12" /><rect x="8.5" y="1" width="3.5" height="12" /></svg>
+            </button>
+          ) : <div className="w-7" />}
         </div>
       )}
 
@@ -1200,51 +1205,33 @@ export default function Game() {
           className="block w-full h-auto cursor-none touch-none"
           style={{ aspectRatio: `${GW}/${GH}` }} />
 
-        {/* Pause overlay */}
-        {paused && !showCollection && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm z-10">
-            <p className="text-2xl sm:text-3xl font-bold text-zinc-200 mb-3">PAUSED</p>
-            <button onClick={togglePause}
-              className="px-5 py-2 text-sm sm:text-base bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-colors mb-2">
-              재시작
-            </button>
-            <button onClick={() => setShowCollection(true)}
-              className="px-5 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors">
-              원소 도감 ({levelCollected.size}/118)
-            </button>
-            <p className="text-xs text-zinc-500 mt-2">ESC / P</p>
-          </div>
-        )}
-
-        {/* Collection panel */}
-        {showCollection && (
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-sm z-20 flex flex-col p-2">
-            <div className="flex justify-between items-center mb-1">
-              <p className="text-sm font-bold text-zinc-200">원소 도감 ({levelCollected.size}/118)</p>
-              <button onClick={() => setShowCollection(false)}
-                className="px-2 py-0.5 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded transition-colors">
-                닫기
-              </button>
-            </div>
-            {/* 18-column periodic table — fills available space, no overflow */}
-            <div className="flex-1 w-full max-w-full overflow-hidden" style={{ display: "grid", gridTemplateColumns: "repeat(18, 1fr)", gridTemplateRows: "repeat(9, 1fr)", gap: "1px" }}>
+        {/* Pause overlay — with periodic table */}
+        {paused && (
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-10 flex flex-col items-center p-3">
+            <p className="text-xl font-bold text-zinc-200 mb-1">PAUSED</p>
+            <p className="text-xs text-zinc-500 mb-2">발견: {levelCollected.size}/118</p>
+            {/* Same periodic table as game over/clear */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(18, 1fr)", gap: "1px" }} className="mb-2 w-full max-w-full overflow-hidden">
               {Array.from({ length: 9 * 18 }, (_, i) => {
-                const row = Math.floor(i / 18) + 1;
-                const col = (i % 18) + 1;
-                const el = ELEMENTS.find(e => e.row === row && e.col === col);
+                const r = Math.floor(i / 18) + 1, c = (i % 18) + 1;
+                const el = ELEMENTS.find(e => e.row === r && e.col === c);
                 if (!el) return <div key={i} />;
                 const found = levelCollected.has(el.atomicNumber);
-                const colors = GROUP_COLORS[el.group];
+                const clr = GROUP_COLORS[el.group];
                 return (
                   <div key={el.atomicNumber}
-                    className={`flex flex-col items-center justify-center rounded overflow-hidden ${found ? "" : "opacity-15"}`}
-                    style={{ background: found ? colors.fill : "#27272a" }}>
-                    <span style={{ fontSize: "clamp(3px,0.8vw,5px)", color: found ? "rgba(255,255,255,0.5)" : "#555", lineHeight: 1 }}>{el.atomicNumber}</span>
-                    <span style={{ fontSize: "clamp(5px,1.4vw,9px)", fontWeight: 700, color: found ? "#fff" : "#555", lineHeight: 1.1 }}>{el.symbol}</span>
+                    className={`flex flex-col items-center justify-center rounded ${found ? "" : "opacity-15"}`}
+                    style={{ background: found ? clr.fill : "#27272a", aspectRatio: "1" }}>
+                    <span style={{ fontSize: "3px", color: found ? "rgba(255,255,255,0.5)" : "#555", lineHeight: 1 }}>{el.atomicNumber}</span>
+                    <span style={{ fontSize: "5px", fontWeight: 700, color: found ? "#fff" : "#555", lineHeight: 1 }}>{el.symbol}</span>
                   </div>
                 );
               })}
             </div>
+            <button onClick={togglePause}
+              className="px-5 py-2 text-sm bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-colors">
+              재시작
+            </button>
           </div>
         )}
 
