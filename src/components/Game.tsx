@@ -139,6 +139,7 @@ export default function Game() {
   const gasZoneHeightRef = useRef(0);
   const comboRef = useRef(0);
   const shakeRef = useRef(0);
+  const stallFramesRef = useRef(0); // counts frames where ball is nearly horizontal
   const levelRef = useRef(1);
   const timerStartRef = useRef(0); // performance.now() when launched // remaining shake frames
   const collectedRef = useRef<Set<number>>(new Set());
@@ -616,12 +617,26 @@ export default function Game() {
         }
       }
 
-      // Prevent horizontal stall — force ball downward toward paddle
-      // Check if ball is moving nearly horizontal (vy too small)
-      if (Math.abs(b.velocity.y) < sp * 0.4) {
-        const ny = sp * 0.6; // always push strongly downward
+      // Prevent horizontal stall — if ball stays nearly horizontal, force it down
+      if (Math.abs(b.velocity.y) < sp * 0.45) {
+        stallFramesRef.current += 1;
+      } else {
+        stallFramesRef.current = 0;
+      }
+      // Immediate mild correction
+      if (Math.abs(b.velocity.y) < sp * 0.3) {
+        const ny = sp * 0.5;
         const nx = Math.sign(b.velocity.x || 1) * Math.sqrt(Math.max(0, sp * sp - ny * ny));
         Matter.Body.setVelocity(b, { x: nx, y: ny });
+      }
+      // If stuck horizontal for 30+ frames (~0.5s), hard reset toward paddle
+      if (stallFramesRef.current > 30) {
+        stallFramesRef.current = 0;
+        const ny = sp * 0.8;
+        const nx = Math.sign(b.velocity.x || 1) * Math.sqrt(Math.max(0, sp * sp - ny * ny));
+        Matter.Body.setVelocity(b, { x: nx, y: ny });
+        // Also nudge position slightly down to escape trapped rows
+        Matter.Body.setPosition(b, { x: b.position.x, y: b.position.y + 3 });
       }
 
       // Multiball cleanup: remove if fell off screen or expired (1 min)
