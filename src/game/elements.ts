@@ -253,7 +253,7 @@ const OVERRIDES: Record<number, PartialOverride> = {
   5:  { group: "utility",  effect: "slow_control",     vfx: "slow_blue",       params: { slowMultiplier: 0.75, duration: 1500 } },
   8:  { group: "utility",  effect: "ball_powerup",     vfx: "powerup_gold",    params: { sizeMultiplier: 1.3, duration: 2500 } },
   10: { group: "utility",  effect: "bounce",           vfx: "neon_bounce",     params: { bouncePower: 1.15 } },
-  14: { group: "utility",  effect: "trajectory_guide", vfx: "trajectory_line", params: { duration: 4000, guideBounces: 3 } },
+  14: { group: "utility",  effect: "trajectory_guide", vfx: "trajectory_line", params: { duration: 30000, guideBounces: 3 } },
   15: { group: "utility",  effect: "trail_damage",     vfx: "trail_fire",      params: { duration: 2000, interval: 120 } },
   18: { group: "defense",  effect: "floor_shield",     vfx: "shield_blue",     params: { duration: 4000 } },
   80: { group: "debuff",   effect: "slippery",         vfx: "none",            rarity: "rare", params: { duration: 2500 } },
