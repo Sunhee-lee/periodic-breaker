@@ -33,7 +33,7 @@ const MULTIBALL_ELEMENTS = new Set([118, 117, 116]); // Og, Ts, Lv
 const BASE_SPEED = 6;
 
 // Level configs
-const LEVEL_TIME = 420; // 7 minutes per level
+const LEVEL_TIMES = [420, 300, 180]; // L1: 7min, L2: 5min, L3: 3min
 const LEVEL_SPEED = [BASE_SPEED, BASE_SPEED * 1.4, BASE_SPEED * 1.8]; // L1, L2, L3
 const LEVEL_BG: string[] = ["#0f0f1a", "#0f1a14", "#1a0f1a"]; // dark blue, dark green, dark purple
 const LEVEL_BLOCK_ALPHA: number[] = [1, 1.2, 1.4]; // block color intensity multiplier
@@ -115,10 +115,11 @@ export default function Game() {
   const [difficulty, setDifficulty] = useState<string | null>(null); // null = show select
   const [combo, setCombo] = useState(0);
   const [collected, setCollected] = useState<Set<number>>(new Set());
+  const [levelCollected, setLevelCollected] = useState<Set<number>>(new Set());
   const [showCollection, setShowCollection] = useState(false);
   const [selectedElement, setSelectedElement] = useState<number | null>(null);
   const [level, setLevel] = useState(1);
-  const [timeLeft, setTimeLeft] = useState(LEVEL_TIME);
+  const [timeLeft, setTimeLeft] = useState(LEVEL_TIMES[0]);
 
   const livesRef = useRef(LIVES);
   const scoreRef = useRef(0);
@@ -143,6 +144,7 @@ export default function Game() {
   const levelRef = useRef(1);
   const timerStartRef = useRef(0); // performance.now() when launched // remaining shake frames
   const collectedRef = useRef<Set<number>>(new Set());
+  const levelCollectedRef = useRef<Set<number>>(new Set()); // current level only
   const multiBallsRef = useRef<{ body: Matter.Body }[]>([]); // extra balls, no time limit
 
   // ── Sync helpers (React state ← refs for render loop) ──
@@ -152,6 +154,7 @@ export default function Game() {
     setBlocksLeft(blocksRef.current.filter((b) => b.alive && b.breakable).length);
     setCombo(comboRef.current);
     setCollected(new Set(collectedRef.current));
+    setLevelCollected(new Set(levelCollectedRef.current));
   }, []);
 
   // ── Create blocks ──
@@ -237,6 +240,7 @@ export default function Game() {
     comboRef.current = 0;
     shakeRef.current = 0;
     collectedRef.current = new Set();
+    levelCollectedRef.current = new Set();
     // Remove multiball extras
     for (const mb of multiBallsRef.current) {
       try { Matter.Composite.remove(engine.world, mb.body); } catch { /* */ }
@@ -245,13 +249,15 @@ export default function Game() {
     levelRef.current = 1;
     timerStartRef.current = 0;
     setLevel(1);
-    setTimeLeft(LEVEL_TIME);
+    setTimeLeft(LEVEL_TIMES[levelRef.current - 1]);
     setGameOver(false);
     setStageClear(false);
     setShowCollection(false);
     setBlocksLeft(DESTROYABLE_COUNT);
     setScore(0);
     setLives(LIVES);
+    // Restart physics runner if stopped
+    if (runnerRef.current && engineRef.current) Matter.Runner.run(runnerRef.current, engineRef.current);
     resetBall();
   }, [resetBall, createBlocks]);
 
@@ -285,6 +291,7 @@ export default function Game() {
     gasZoneEndRef.current = 0;
     comboRef.current = 0;
     shakeRef.current = 0;
+    levelCollectedRef.current = new Set();
     vfxRef.current.clear();
     floatingTextsRef.current = [];
     if (stateRef.current) {
@@ -295,10 +302,12 @@ export default function Game() {
       stateRef.current.stageClear = false;
     }
     setLevel(newLv);
-    setTimeLeft(LEVEL_TIME);
+    setTimeLeft(LEVEL_TIMES[newLv - 1]);
     setStageClear(false);
     setShowCollection(false);
     setBlocksLeft(DESTROYABLE_COUNT);
+    // Restart physics runner if stopped
+    if (runnerRef.current && engineRef.current) Matter.Runner.run(runnerRef.current, engineRef.current);
     resetBall();
   }, [resetBall, createBlocks]);
 
@@ -416,6 +425,7 @@ export default function Game() {
 
         // Collection
         collectedRef.current.add(blk.id);
+        levelCollectedRef.current.add(blk.id);
 
         // Sound
         const isExplosive = blk.effect === "explosion";
@@ -509,16 +519,18 @@ export default function Game() {
       // Timer countdown
       if (timerStartRef.current > 0 && launchedRef.current && !goRef.current && !clearRef.current) {
         const elapsed = (now - timerStartRef.current) / 1000;
-        const remaining = Math.max(0, LEVEL_TIME - elapsed);
+        const remaining = Math.max(0, LEVEL_TIMES[levelRef.current - 1] - elapsed);
         setTimeLeft(Math.ceil(remaining));
         if (remaining <= 0) {
-          // Time up = game over, stop everything
+          // Time up = game over, freeze everything
           goRef.current = true;
           setGameOver(true);
           if (ballRef.current) Matter.Body.setVelocity(ballRef.current, { x: 0, y: 0 });
           for (const mb of multiBallsRef.current) {
             Matter.Body.setVelocity(mb.body, { x: 0, y: 0 });
           }
+          // Stop physics runner completely
+          if (runnerRef.current) Matter.Runner.stop(runnerRef.current);
           syncUI();
           return;
         }
@@ -586,6 +598,7 @@ export default function Game() {
           goRef.current = true;
           setGameOver(true);
           Matter.Body.setVelocity(b, { x: 0, y: 0 });
+          if (runnerRef.current) Matter.Runner.stop(runnerRef.current);
         } else if (paddleRef.current) {
           Matter.Body.setPosition(b, {
             x: paddleRef.current.position.x,
@@ -1185,11 +1198,12 @@ export default function Game() {
             {stageClear ? (
               <div className="flex flex-col items-center w-full max-h-full overflow-y-auto p-4 pointer-events-auto">
                 <p className="text-2xl sm:text-3xl font-bold text-emerald-400 mb-1">Level {level} Clear!</p>
-                <p className="text-sm text-zinc-400 mb-2">Score: <span className="text-indigo-400 font-bold">{score}</span> | 수집: {collected.size}/118</p>
-                {/* Mini collection grid */}
+                <p className="text-sm text-zinc-400 mb-1">Score: <span className="text-indigo-400 font-bold">{score}</span></p>
+                <p className="text-xs text-zinc-500 mb-2">이번 레벨 발견: {levelCollected.size}개 | 전체: {collected.size}/118</p>
+                {/* This level's collection grid */}
                 <div className="grid grid-cols-9 gap-0.5 mb-3 w-full max-w-[360px]">
                   {ELEMENTS.map((el) => {
-                    const found = collected.has(el.atomicNumber);
+                    const found = levelCollected.has(el.atomicNumber);
                     const clr = GROUP_COLORS[el.group];
                     return (
                       <div key={el.atomicNumber}
@@ -1218,11 +1232,12 @@ export default function Game() {
             ) : gameOver ? (
               <div className="flex flex-col items-center w-full max-h-full overflow-y-auto p-4 pointer-events-auto">
                 <p className="text-3xl sm:text-4xl font-bold text-red-400 mb-2">{timeLeft <= 0 ? "TIME UP!" : "GAME OVER"}</p>
-                <p className="text-sm text-zinc-400 mb-2">Score: <span className="text-indigo-400 font-bold">{score}</span> | 발견: {collected.size}/118</p>
-                {/* Mini collection grid */}
+                <p className="text-sm text-zinc-400 mb-1">Level {level} | Score: <span className="text-indigo-400 font-bold">{score}</span></p>
+                <p className="text-xs text-zinc-500 mb-2">이번 레벨 발견: {levelCollected.size}개 | 전체: {collected.size}/118</p>
+                {/* This level's collection grid */}
                 <div className="grid grid-cols-9 gap-0.5 mb-3 w-full max-w-[360px]">
                   {ELEMENTS.map((el) => {
-                    const found = collected.has(el.atomicNumber);
+                    const found = levelCollected.has(el.atomicNumber);
                     const clr = GROUP_COLORS[el.group];
                     return (
                       <div key={el.atomicNumber}
