@@ -370,14 +370,21 @@ export default function Game() {
         for (const ft of existingTexts) {
           if (Math.abs(ft.y - ty) < 22) ty += 22;
         }
-        let displayText = getFlavorText(blk.id);
-        if (comboLevel >= 2) displayText += ` x${comboLevel} COMBO!`;
         existingTexts.push({
-          text: displayText,
+          text: getFlavorText(blk.id),
           x: GW / 2, y: ty,
           life: 180, maxLife: 180,
-          color: comboLevel >= 5 ? "#fbbf24" : (colors?.border ?? "#ffffff"),
+          color: colors?.border ?? "#ffffff",
         });
+        // Combo text — separate, top-right area
+        if (comboLevel >= 2) {
+          existingTexts.push({
+            text: `x${comboLevel} COMBO!`,
+            x: GW - 70, y: GH - 80,
+            life: 60, maxLife: 60,
+            color: "#ffffff",
+          });
+        }
 
         // Trigger effect
         executeEffect(blk.effect, blk, gs);
@@ -530,8 +537,8 @@ export default function Game() {
       }
 
       // Prevent horizontal stall — force ball downward toward paddle
-      if (Math.abs(b.velocity.y) < 1.5) {
-        const ny = 2.5; // always push down so it returns to paddle
+      if (Math.abs(b.velocity.y) < 2.5) {
+        const ny = 3.5; // strong downward push
         const nx = Math.sign(b.velocity.x || 1) * Math.sqrt(Math.max(0, sp * sp - ny * ny));
         Matter.Body.setVelocity(b, { x: nx, y: ny });
       }

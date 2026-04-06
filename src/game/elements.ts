@@ -222,7 +222,7 @@ type PartialOverride = Partial<Pick<ElementDef, "group" | "effect" | "vfx" | "du
 const OVERRIDES: Record<number, PartialOverride> = {
   // ── ATTACK ──
   // Explosive (H + alkali metals) — element-specific colored explosions
-  1:  { group: "attack",  effect: "hydrogen_explosion",   vfx: "explosion_hydrogen", params: { radius: 80 } },  // 수소: 주변 블록 폭파
+  1:  { group: "attack",  effect: "explosion",             vfx: "explosion_hydrogen" },  // 수소: 폭발 VFX만
   3:  { group: "attack",  effect: "explosion",           vfx: "explosion_lithium" },     // 진홍색 (리튬 불꽃)
   11: { group: "attack",  effect: "explosion",           vfx: "explosion_sodium" },      // 노란색 (나트륨 불꽃)
   19: { group: "attack",  effect: "explosion",           vfx: "explosion_potassium" },   // 보라색 (칼륨 불꽃)
