@@ -14,6 +14,7 @@ import { getFlavorText } from "@/game/elementFlavor";
 import {
   sndPaddle, sndBlockBreak, sndExplosion, sndRadioactive,
   sndCombo, sndPowerup, sndLifeLost,
+  startBGM, stopBGM,
 } from "@/game/sound";
 
 // ── Constants ─────────────────────────────────────────────
@@ -227,9 +228,11 @@ export default function Game() {
     });
     launchedRef.current = true;
     setLaunched(true);
+    startBGM(levelRef.current);
   }, []);
 
   const restartGame = useCallback(() => {
+    stopBGM();
     const engine = engineRef.current;
     if (!engine) return;
     for (const b of blocksRef.current) {
@@ -336,8 +339,10 @@ export default function Game() {
     if (!runner) return;
     if (next) {
       Matter.Runner.stop(runner);
+      stopBGM();
     } else if (engineRef.current) {
       Matter.Runner.run(runner, engineRef.current);
+      startBGM(levelRef.current);
     }
   }, []);
 
@@ -521,6 +526,7 @@ export default function Game() {
           clearRef.current = true;
           gs.stageClear = true;
           setStageClear(true);
+          stopBGM();
           Matter.Body.setVelocity(ball, { x: 0, y: 0 });
           if (runnerRef.current) Matter.Runner.stop(runnerRef.current);
         }
@@ -549,11 +555,11 @@ export default function Game() {
           // Time up = game over, freeze everything
           goRef.current = true;
           setGameOver(true);
+          stopBGM();
           if (ballRef.current) Matter.Body.setVelocity(ballRef.current, { x: 0, y: 0 });
           for (const mb of multiBallsRef.current) {
             Matter.Body.setVelocity(mb.body, { x: 0, y: 0 });
           }
-          // Stop physics runner completely
           if (runnerRef.current) Matter.Runner.stop(runnerRef.current);
           syncUI();
           return;
@@ -621,6 +627,7 @@ export default function Game() {
         if (livesRef.current <= 0) {
           goRef.current = true;
           setGameOver(true);
+          stopBGM();
           Matter.Body.setVelocity(b, { x: 0, y: 0 });
           if (runnerRef.current) Matter.Runner.stop(runnerRef.current);
         } else if (paddleRef.current) {
@@ -1072,6 +1079,7 @@ export default function Game() {
     canvas.addEventListener("touchend", onTE, { passive: false });
 
     return () => {
+      stopBGM();
       cancelAnimationFrame(animRef.current);
       Matter.Runner.stop(runner);
       Matter.Engine.clear(engine);

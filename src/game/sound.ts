@@ -131,6 +131,106 @@ export function sndPowerup() {
   });
 }
 
+// ────────────────────────────────────────────────────────────
+//  Background Music — procedural 8-bit chiptune per level
+// ────────────────────────────────────────────────────────────
+
+let bgmInterval: ReturnType<typeof setInterval> | null = null;
+let bgmGain: GainNode | null = null;
+let bgmPlaying = false;
+let bgmLevel = 0;
+
+// Note frequencies (C4=262, etc)
+const N: Record<string, number> = {
+  C3:131,D3:147,E3:165,F3:175,G3:196,A3:220,B3:247,
+  C4:262,D4:294,E4:330,F4:349,G4:392,A4:440,B4:494,
+  C5:523,D5:587,E5:659,F5:698,G5:784,A5:880,B5:988,
+};
+
+function playNote(c: AudioContext, freq: number, start: number, dur: number, type: OscillatorType, vol: number, dest: AudioNode) {
+  const o = c.createOscillator();
+  const g = c.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, start);
+  g.gain.setValueAtTime(vol, start);
+  g.gain.setValueAtTime(vol, start + dur * 0.7);
+  g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+  o.connect(g).connect(dest);
+  o.start(start);
+  o.stop(start + dur);
+}
+
+function schedulePattern(c: AudioContext, dest: AudioNode, t: number, melody: number[], bass: number[], tempo: number) {
+  const step = 60 / tempo / 2; // 8th notes
+  melody.forEach((freq, i) => {
+    if (freq > 0) playNote(c, freq, t + i * step, step * 0.8, "square", 0.06, dest);
+  });
+  bass.forEach((freq, i) => {
+    if (freq > 0) playNote(c, freq, t + i * step, step * 0.9, "triangle", 0.08, dest);
+  });
+}
+
+// Level 1: bright, bouncy C major
+const L1_MELODY = [N.E4,N.G4,N.C5,N.G4, N.E4,N.D4,N.C4,N.D4, N.E4,N.G4,N.A4,N.G4, N.E4,N.D4,N.E4,0];
+const L1_BASS   = [N.C3,0,N.C3,0, N.G3,0,N.G3,0, N.A3,0,N.A3,0, N.G3,0,N.F3,0];
+
+// Level 2: tense, minor key, faster
+const L2_MELODY = [N.A4,N.C5,N.E5,N.C5, N.A4,N.G4,N.F4,N.G4, N.A4,N.B4,N.C5,N.B4, N.A4,N.G4,N.A4,0];
+const L2_BASS   = [N.A3,0,N.A3,0, N.F3,0,N.F3,0, N.D3,0,N.D3,0, N.E3,0,N.E3,0];
+
+// Level 3: intense, dramatic, fastest
+const L3_MELODY = [N.E5,N.D5,N.C5,N.B4, N.A4,N.B4,N.C5,N.D5, N.E5,N.E5,N.D5,N.C5, N.B4,N.A4,N.B4,0];
+const L3_BASS   = [N.A3,0,N.E3,0, N.F3,0,N.D3,0, N.A3,0,N.E3,0, N.G3,0,N.E3,0];
+
+const MELODIES = [L1_MELODY, L2_MELODY, L3_MELODY];
+const BASSES   = [L1_BASS,   L2_BASS,   L3_BASS];
+const TEMPOS   = [140, 160, 180];
+
+export function startBGM(level: number) {
+  stopBGM();
+  try {
+    const c = getCtx();
+    bgmGain = c.createGain();
+    bgmGain.gain.value = 0.4;
+    bgmGain.connect(c.destination);
+
+    bgmLevel = Math.max(0, Math.min(2, level - 1));
+    bgmPlaying = true;
+
+    const melody = MELODIES[bgmLevel];
+    const bass = BASSES[bgmLevel];
+    const tempo = TEMPOS[bgmLevel];
+    const patternDur = melody.length * (60 / tempo / 2) * 1000;
+
+    // Play first pattern immediately
+    schedulePattern(c, bgmGain, c.currentTime + 0.05, melody, bass, tempo);
+
+    // Loop
+    bgmInterval = setInterval(() => {
+      if (!bgmPlaying) return;
+      try {
+        const cx = getCtx();
+        if (bgmGain) schedulePattern(cx, bgmGain, cx.currentTime + 0.05, melody, bass, tempo);
+      } catch { /* */ }
+    }, patternDur);
+  } catch { /* */ }
+}
+
+export function stopBGM() {
+  bgmPlaying = false;
+  if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; }
+  if (bgmGain) {
+    try { bgmGain.gain.setValueAtTime(0, getCtx().currentTime); } catch { /* */ }
+    bgmGain = null;
+  }
+}
+
+export function setBGMVolume(vol: number) {
+  if (bgmGain) {
+    try { bgmGain.gain.setValueAtTime(vol, getCtx().currentTime); } catch { /* */ }
+  }
+}
+
 /** Life lost */
 export function sndLifeLost() {
   play((c, t) => {
