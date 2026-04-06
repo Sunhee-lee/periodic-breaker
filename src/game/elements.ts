@@ -117,19 +117,19 @@ const CATEGORY_RULES: Record<ElementCategory, CategoryRule> = {
     effect: "shard_splash",
     vfx: "shard_splash",
     baseDurability: 1,
-    durabilityScale: 0.3,
+    durabilityScale: 0.15,
     baseRarity: "common",
     buildParams: (el) => ({
       shardCount: 2 + el.period,
-      range: 60 + el.period * 10,
+      range: 30 + el.period * 5,
     }),
   },
   transition_metal: {
     group: "defense",
     effect: "metal_reflect",
     vfx: "metal_reflect",
-    baseDurability: 2,
-    durabilityScale: 0.2,
+    baseDurability: 1,
+    durabilityScale: 0.12,
     baseRarity: "common",
     buildParams: (el) => ({
       reflectMultiplier: 1.0 + el.period * 0.05,
@@ -206,8 +206,8 @@ const CATEGORY_RULES: Record<ElementCategory, CategoryRule> = {
     group: "attack",
     effect: "ball_pierce",
     vfx: "radiation_burst",
-    baseDurability: 2,
-    durabilityScale: 0.15,
+    baseDurability: 1,
+    durabilityScale: 0.1,
     baseRarity: "epic",
     buildParams: (el) => ({
       duration: 1500 + (el.z - 89) * 100,
@@ -234,9 +234,9 @@ const OVERRIDES: Record<number, PartialOverride> = {
   4:  { group: "defense",  effect: "shard_splash",   vfx: "shard_splash",   durability: 2, params: { shardCount: 4, range: 50 } },
   6:  { group: "defense",  effect: "none",           vfx: "none",           durability: 3, rarity: "rare" },
   13: { group: "defense",  effect: "sharp_reflect",  vfx: "sharp_reflect",  durability: 2, params: { reflectMultiplier: 1.25 } },
-  26: { group: "defense",  effect: "metal_reflect",  vfx: "metal_reflect",  durability: 3, rarity: "rare", params: { reflectMultiplier: 1.3 } },
+  26: { group: "defense",  effect: "metal_reflect",  vfx: "metal_reflect",  durability: 2, rarity: "rare", params: { reflectMultiplier: 1.3 } },
   47: { group: "defense",  effect: "sharp_reflect",  vfx: "sharp_reflect",  durability: 2, rarity: "epic", params: { reflectMultiplier: 1.35 } },
-  82: { group: "defense",  effect: "heavy_block",    vfx: "heavy_impact",   durability: 4, rarity: "epic", params: { speedReduction: 0.7 } },
+  82: { group: "defense",  effect: "heavy_block",    vfx: "heavy_impact",   durability: 3, rarity: "epic", params: { speedReduction: 0.7 } },
 
   // ── UTILITY ──
   2:  { group: "utility",  effect: "lift",             vfx: "lift_white",      params: { upwardBoost: 1.5, duration: 1200 } },

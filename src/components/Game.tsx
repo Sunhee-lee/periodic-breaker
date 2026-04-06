@@ -490,6 +490,11 @@ export default function Game() {
         // Frozen overlay tint
         const isFrozen = blk.frozen;
 
+        // Opacity based on remaining HP (fades as damaged)
+        const hpRatio = el.durability > 1 ? blk.hp / el.durability : 1;
+        const blockAlpha = 0.35 + hpRatio * 0.65; // range: 0.35 (near death) → 1.0 (full)
+        ctx.globalAlpha = blockAlpha;
+
         // Glow
         ctx.shadowBlur = blk.group === "boss" ? 18 : 8;
         ctx.shadowColor = isFrozen ? "rgba(56,189,248,0.6)" : colors.glow;
@@ -504,6 +509,7 @@ export default function Game() {
         ctx.strokeStyle = isFrozen ? "#38bdf8" : colors.border;
         ctx.lineWidth = 1;
         ctx.stroke();
+        ctx.globalAlpha = 1;
 
         // Durability indicator for multi-hp blocks
         if (blk.hp > 1) {
