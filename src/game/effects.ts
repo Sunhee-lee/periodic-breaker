@@ -103,8 +103,26 @@ register("radioactive_pierce", (block, state) => {
 
 /** Explosive: element-specific colored explosion (no area damage) */
 register("explosion", (block, state) => {
-  // Use the block's own VFX key for element-specific colors
   state.spawnVfx(block.vfx, block.x, block.y);
+});
+
+/** Hydrogen explosion: destroys nearby blocks in radius (one-time, NOT recursive) */
+register("hydrogen_explosion", (block, state) => {
+  const r = block.params.radius ?? 80;
+  state.spawnVfx("explosion_hydrogen", block.x, block.y);
+  // Collect neighbors first
+  const nearby = state.blocks.filter((b) => {
+    if (!b.alive || !b.breakable || b === block) return false;
+    const dx = b.x - block.x;
+    const dy = b.y - block.y;
+    return Math.sqrt(dx * dx + dy * dy) <= r;
+  });
+  // Destroy each neighbor via destroyBlock (which handles score, VFX, removal)
+  for (const nb of nearby) {
+    if (!nb.alive) continue; // already destroyed by a previous neighbor's effect
+    nb.hp = 0;
+    state.destroyBlock(nb);
+  }
 });
 
 /** Ball deals double damage to blocks */

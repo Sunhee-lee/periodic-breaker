@@ -11,6 +11,10 @@ import {
 import { executeEffect, type BlockRuntime, type GameState } from "@/game/effects";
 import { VfxManager } from "@/game/vfx";
 import { getFlavorText } from "@/game/elementFlavor";
+import {
+  sndPaddle, sndBlockBreak, sndExplosion, sndRadioactive,
+  sndCombo, sndPowerup, sndLifeLost,
+} from "@/game/sound";
 
 // ── Constants ─────────────────────────────────────────────
 const GW = 560;
@@ -20,6 +24,11 @@ const PADDLE_H = 14;
 const BALL_R = 8;
 const WALL_T = 20;
 const LIVES = 3;
+// Difficulty = paddle width
+const DIFF_PADDLE: Record<string, number> = { easy: 130, normal: 100, hard: 70 };
+
+// Top 3 most radioactive elements (shortest half-life) → multiball
+const MULTIBALL_ELEMENTS = new Set([118, 117, 116]); // Og, Ts, Lv
 const BASE_SPEED = 6;
 const COLS = 18;
 const BG = 1;
@@ -96,6 +105,10 @@ export default function Game() {
   const [launched, setLaunched] = useState(false);
   const [blocksLeft, setBlocksLeft] = useState(DESTROYABLE_COUNT);
   const [paused, setPaused] = useState(false);
+  const [difficulty, setDifficulty] = useState<string | null>(null); // null = show select
+  const [combo, setCombo] = useState(0);
+  const [collected, setCollected] = useState<Set<number>>(new Set());
+  const [showCollection, setShowCollection] = useState(false);
 
   const livesRef = useRef(LIVES);
   const scoreRef = useRef(0);
@@ -114,12 +127,18 @@ export default function Game() {
   const timedEffectsRef = useRef<{ key: string; endTime: number; revert: () => void }[]>([]);
   const gasZoneEndRef = useRef(0);
   const gasZoneHeightRef = useRef(0);
+  const comboRef = useRef(0);
+  const shakeRef = useRef(0); // remaining shake frames
+  const collectedRef = useRef<Set<number>>(new Set());
+  const multiBallsRef = useRef<Matter.Body[]>([]); // extra balls
 
   // ── Sync helpers (React state ← refs for render loop) ──
   const syncUI = useCallback(() => {
     setScore(scoreRef.current);
     setLives(livesRef.current);
     setBlocksLeft(blocksRef.current.filter((b) => b.alive && b.breakable).length);
+    setCombo(comboRef.current);
+    setCollected(new Set(collectedRef.current));
   }, []);
 
   // ── Create blocks ──
@@ -190,7 +209,8 @@ export default function Game() {
     clearRef.current = false;
     ballSpeedRef.current = BASE_SPEED;
     ballRadiusRef.current = BALL_R;
-    paddleWRef.current = PADDLE_W;
+    const pw = DIFF_PADDLE[difficulty ?? "normal"] ?? PADDLE_W;
+    paddleWRef.current = pw;
     paddleSpeedMultRef.current = 1;
     floorShieldEndRef.current = 0;
     trajectoryEndRef.current = 0;
@@ -199,6 +219,14 @@ export default function Game() {
     gasZoneEndRef.current = 0;
     vfxRef.current.clear();
     floatingTextsRef.current = [];
+    comboRef.current = 0;
+    shakeRef.current = 0;
+    collectedRef.current = new Set();
+    // Remove multiball extras
+    for (const mb of multiBallsRef.current) {
+      try { Matter.Composite.remove(engine.world, mb); } catch { /* */ }
+    }
+    multiBallsRef.current = [];
     setGameOver(false);
     setStageClear(false);
     setBlocksLeft(DESTROYABLE_COUNT);
@@ -307,10 +335,34 @@ export default function Game() {
         if (body) {
           try { Matter.Composite.remove(engine.world, body); } catch { /* already removed */ }
         }
-        // score
+
+        // Combo: increment (resets on paddle hit)
+        comboRef.current += 1;
+        const comboLevel = comboRef.current;
+
+        // Score with combo multiplier
+        const comboMult = 1 + (comboLevel - 1) * 0.25; // x1, x1.25, x1.5, ...
         const points = blk.id * 10;
-        scoreRef.current += Math.round(points * gs.scoreMultiplier);
-        // floating element info text — stagger Y to avoid overlap
+        scoreRef.current += Math.round(points * gs.scoreMultiplier * comboMult);
+
+        // Collection
+        collectedRef.current.add(blk.id);
+
+        // Sound
+        const isExplosive = blk.effect === "explosion";
+        const isRadioactive = blk.effect === "radioactive_pierce";
+        if (isExplosive) { sndExplosion(); }
+        else if (isRadioactive) { sndRadioactive(); }
+        else { sndBlockBreak(); }
+        if (comboLevel >= 3) sndCombo(comboLevel);
+        if (blk.effect === "paddle_grow") sndPowerup();
+
+        // Camera shake for big explosions
+        if (isExplosive && [11, 19, 37, 55].includes(blk.id)) {
+          shakeRef.current = 12; // frames
+        }
+
+        // Floating text — stagger Y
         const el = ELEMENTS.find((e) => e.atomicNumber === blk.id);
         const colors = el ? GROUP_COLORS[el.group] : null;
         const existingTexts = floatingTextsRef.current;
@@ -318,18 +370,39 @@ export default function Game() {
         for (const ft of existingTexts) {
           if (Math.abs(ft.y - ty) < 22) ty += 22;
         }
+        let displayText = getFlavorText(blk.id);
+        if (comboLevel >= 2) displayText += ` x${comboLevel} COMBO!`;
         existingTexts.push({
-          text: getFlavorText(blk.id),
-          x: GW / 2,
-          y: ty,
-          life: 180,
-          maxLife: 180,
-          color: colors?.border ?? "#ffffff",
+          text: displayText,
+          x: GW / 2, y: ty,
+          life: 180, maxLife: 180,
+          color: comboLevel >= 5 ? "#fbbf24" : (colors?.border ?? "#ffffff"),
         });
-        // trigger this block's own effect (no area damage possible)
+
+        // Trigger effect
         executeEffect(blk.effect, blk, gs);
+
+        // Multiball: top 3 radioactive (Og, Ts, Lv) spawn 2 extra balls
+        if (MULTIBALL_ELEMENTS.has(blk.id)) {
+          for (let i = 0; i < 2; i++) {
+            const angle = -Math.PI / 2 + (i === 0 ? -0.5 : 0.5);
+            const mb = Matter.Bodies.circle(blk.x, blk.y, BALL_R, {
+              restitution: 1, friction: 0, frictionAir: 0, frictionStatic: 0,
+              inertia: Infinity, inverseInertia: 0, density: 1,
+              collisionFilter: { category: CAT.BALL, mask: CAT.WALL | CAT.PADDLE | CAT.BLOCK },
+              label: "multiball",
+            });
+            Matter.Body.setVelocity(mb, {
+              x: Math.cos(angle) * BASE_SPEED,
+              y: Math.sin(angle) * BASE_SPEED,
+            });
+            Matter.Composite.add(engine.world, mb);
+            multiBallsRef.current.push(mb);
+          }
+        }
+
         syncUI();
-        // check stage clear
+        // Stage clear
         const remaining = blocksRef.current.filter((b) => b.alive && b.breakable).length;
         if (remaining <= 0) {
           clearRef.current = true;
@@ -402,6 +475,8 @@ export default function Game() {
         }
         livesRef.current -= 1;
         setLives(livesRef.current);
+        sndLifeLost();
+        comboRef.current = 0;
         if (livesRef.current <= 0) {
           goRef.current = true;
           setGameOver(true);
@@ -460,6 +535,15 @@ export default function Game() {
         const nx = Math.sign(b.velocity.x || 1) * Math.sqrt(Math.max(0, sp * sp - ny * ny));
         Matter.Body.setVelocity(b, { x: nx, y: ny });
       }
+
+      // Multiball cleanup: remove extra balls that fell off screen
+      for (let i = multiBallsRef.current.length - 1; i >= 0; i--) {
+        const mb = multiBallsRef.current[i];
+        if (mb.position.y > GH + BALL_R * 2) {
+          try { Matter.Composite.remove(engine.world, mb); } catch { /* */ }
+          multiBallsRef.current.splice(i, 1);
+        }
+      }
     });
 
     // ── Collision handler ──
@@ -479,6 +563,8 @@ export default function Game() {
             x: Math.cos(angle) * sp,
             y: Math.sin(angle) * sp,
           });
+          sndPaddle();
+          comboRef.current = 0; // reset combo on paddle hit
           // Radioactive pierce: resets immediately on paddle hit
           if (gs.ball.pierce) {
             gs.ball.pierce = false;
@@ -532,6 +618,17 @@ export default function Game() {
     // ══════════════════════════════════════════════════════
     const render = () => {
       ctx.clearRect(0, 0, GW, GH);
+
+      // Camera shake
+      if (shakeRef.current > 0) {
+        shakeRef.current -= 1;
+        const intensity = shakeRef.current * 0.8;
+        ctx.save();
+        ctx.translate(
+          (Math.random() - 0.5) * intensity * 2,
+          (Math.random() - 0.5) * intensity * 2,
+        );
+      }
 
       // BG
       ctx.fillStyle = "#0f0f1a";
@@ -724,6 +821,20 @@ export default function Game() {
         }
       }
 
+      // ── Multiball extra balls ──
+      for (const mb of multiBallsRef.current) {
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "rgba(251,191,36,0.6)";
+        const mbg = ctx.createRadialGradient(mb.position.x - 1, mb.position.y - 1, 0, mb.position.x, mb.position.y, BALL_R);
+        mbg.addColorStop(0, "#fde047");
+        mbg.addColorStop(1, "#f97316");
+        ctx.fillStyle = mbg;
+        ctx.beginPath();
+        ctx.arc(mb.position.x, mb.position.y, BALL_R, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
       // ── Floating element info texts ──
       const fts = floatingTextsRef.current;
       for (let i = fts.length - 1; i >= 0; i--) {
@@ -750,6 +861,9 @@ export default function Game() {
         ctx.shadowBlur = 0;
         ctx.globalAlpha = 1;
       }
+
+      // End camera shake transform
+      if (shakeRef.current >= 0) ctx.restore();
 
       animRef.current = requestAnimationFrame(render);
     };
@@ -803,6 +917,41 @@ export default function Game() {
     { label: "Score", color: "#eab308" },
   ];
 
+  // Difficulty select handler
+  const startWithDifficulty = useCallback((diff: string) => {
+    setDifficulty(diff);
+    const pw = DIFF_PADDLE[diff] ?? PADDLE_W;
+    paddleWRef.current = pw;
+    if (stateRef.current) {
+      stateRef.current.paddle.width = pw;
+      stateRef.current.paddle.baseWidth = pw;
+    }
+  }, []);
+
+  // If no difficulty selected, show select screen
+  if (!difficulty) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-6 select-none px-4">
+        <h1 className="text-2xl sm:text-4xl font-bold tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+          PERIODIC BREAKER
+        </h1>
+        <p className="text-zinc-400 text-sm sm:text-base">난이도를 선택하세요</p>
+        <div className="flex gap-3">
+          {([["easy", "Easy", "패들 130px", "#22c55e"],
+             ["normal", "Normal", "패들 100px", "#3b82f6"],
+             ["hard", "Hard", "패들 70px", "#ef4444"]] as const).map(([key, label, desc, color]) => (
+            <button key={key} onClick={() => startWithDifficulty(key)}
+              className="flex flex-col items-center gap-1 px-5 py-3 rounded-lg border border-zinc-700 hover:border-zinc-500 bg-zinc-900 hover:bg-zinc-800 transition-colors"
+            >
+              <span className="font-bold text-lg" style={{ color }}>{label}</span>
+              <span className="text-xs text-zinc-500">{desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center gap-2 sm:gap-3 select-none py-2 sm:py-4 px-1 w-full max-w-[560px] mx-auto">
       {/* Title */}
@@ -821,22 +970,24 @@ export default function Game() {
               }`} />
             ))}
           </div>
+          {combo >= 2 && (
+            <span className={`font-mono font-bold ${combo >= 5 ? "text-yellow-400" : "text-orange-400"}`}>
+              x{combo}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-1">
-            <span className="text-zinc-400 uppercase tracking-wide">Elem</span>
-            <span className="text-base sm:text-lg font-mono font-bold text-emerald-400">{blocksLeft}</span>
+            <span className="text-zinc-400 uppercase tracking-wide">{collected.size}/118</span>
           </div>
           <div className="flex items-center gap-1">
             <span className="text-zinc-400 uppercase tracking-wide">Score</span>
             <span className="text-base sm:text-lg font-mono font-bold text-indigo-400">{score}</span>
           </div>
           {launched && !gameOver && !stageClear && (
-            <button
-              onClick={togglePause}
+            <button onClick={togglePause}
               className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 transition-colors text-zinc-300"
-              aria-label={paused ? "Resume" : "Pause"}
-            >
+              aria-label={paused ? "Resume" : "Pause"}>
               {paused ? (
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><polygon points="3,1 12,7 3,13" /></svg>
               ) : (
@@ -857,23 +1008,52 @@ export default function Game() {
         ))}
       </div>
 
-      {/* Canvas – scales to fit viewport width */}
+      {/* Canvas */}
       <div className="relative rounded-lg overflow-hidden shadow-[0_0_40px_rgba(99,102,241,0.15)] w-full">
         <canvas ref={canvasRef} width={GW} height={GH}
           className="block w-full h-auto cursor-none touch-none"
           style={{ aspectRatio: `${GW}/${GH}` }} />
 
         {/* Pause overlay */}
-        {paused && (
+        {paused && !showCollection && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm z-10">
             <p className="text-2xl sm:text-3xl font-bold text-zinc-200 mb-3">PAUSED</p>
-            <button
-              onClick={togglePause}
-              className="px-5 py-2 text-sm sm:text-base bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-colors shadow-[0_0_20px_rgba(99,102,241,0.3)]"
-            >
+            <button onClick={togglePause}
+              className="px-5 py-2 text-sm sm:text-base bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-colors mb-2">
               Resume
             </button>
-            <p className="text-xs text-zinc-500 mt-2">Press ESC or P to resume</p>
+            <button onClick={() => setShowCollection(true)}
+              className="px-5 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors">
+              원소 도감 ({collected.size}/118)
+            </button>
+            <p className="text-xs text-zinc-500 mt-2">ESC / P</p>
+          </div>
+        )}
+
+        {/* Collection panel */}
+        {showCollection && (
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-20 overflow-y-auto p-3">
+            <div className="flex justify-between items-center mb-2">
+              <p className="text-lg font-bold text-zinc-200">원소 도감 ({collected.size}/118)</p>
+              <button onClick={() => setShowCollection(false)}
+                className="px-3 py-1 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded transition-colors">
+                닫기
+              </button>
+            </div>
+            <div className="grid grid-cols-6 sm:grid-cols-9 gap-1">
+              {ELEMENTS.map((el) => {
+                const found = collected.has(el.atomicNumber);
+                const colors = GROUP_COLORS[el.group];
+                return (
+                  <div key={el.atomicNumber}
+                    className={`flex flex-col items-center justify-center rounded p-0.5 text-center ${found ? "" : "opacity-20"}`}
+                    style={{ background: found ? colors.fill : "#27272a", minHeight: "36px" }}>
+                    <span className="text-[8px] text-zinc-400">{el.atomicNumber}</span>
+                    <span className="text-[10px] font-bold" style={{ color: found ? colors.text : "#71717a" }}>{el.symbol}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

@@ -222,7 +222,7 @@ type PartialOverride = Partial<Pick<ElementDef, "group" | "effect" | "vfx" | "du
 const OVERRIDES: Record<number, PartialOverride> = {
   // ── ATTACK ──
   // Explosive (H + alkali metals) — element-specific colored explosions
-  1:  { group: "attack",  effect: "explosion",           vfx: "explosion_hydrogen" },    // 파란-흰 (수소 불꽃)
+  1:  { group: "attack",  effect: "hydrogen_explosion",   vfx: "explosion_hydrogen", params: { radius: 80 } },  // 수소: 주변 블록 폭파
   3:  { group: "attack",  effect: "explosion",           vfx: "explosion_lithium" },     // 진홍색 (리튬 불꽃)
   11: { group: "attack",  effect: "explosion",           vfx: "explosion_sodium" },      // 노란색 (나트륨 불꽃)
   19: { group: "attack",  effect: "explosion",           vfx: "explosion_potassium" },   // 보라색 (칼륨 불꽃)
@@ -263,10 +263,6 @@ const OVERRIDES: Record<number, PartialOverride> = {
   // ── SCORE ──
   7:  { group: "score", effect: "freeze_score", vfx: "freeze_ice",  params: { multiplier: 1.5, duration: 3000 } },
   12: { group: "score", effect: "flash_bonus",  vfx: "flash_white", params: { bonus: 500 } },  // Mg — 섬광 점수 보너스
-  // Paddle grow — 구조/전도성 금속
-  22: { group: "utility", effect: "paddle_grow", vfx: "paddle_grow", durability: 2, params: { scale: 1.3, duration: 5000 } },  // Ti — 가볍고 강한 금속
-  26: { group: "utility", effect: "paddle_grow", vfx: "paddle_grow", durability: 2, params: { scale: 1.35, duration: 5000 } }, // Fe — 건축의 기본, 넓은 방패
-  29: { group: "utility", effect: "paddle_grow", vfx: "paddle_grow", rarity: "rare", params: { scale: 1.3, duration: 4000 } }, // Cu — 전도성, 에너지 확산
   79: { group: "score", effect: "flash_bonus",  vfx: "flash_white", rarity: "legendary", params: { bonus: 2000 } },
 
   // Ca — alkaline earth defense
