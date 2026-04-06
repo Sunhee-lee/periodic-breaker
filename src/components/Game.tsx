@@ -141,6 +141,7 @@ export default function Game() {
   const [playerName, setPlayerName] = useState("");
   const [rankSaved, setRankSaved] = useState(false);
   const [rankings, setRankings] = useState<RankEntry[]>([]);
+  const [showRanking, setShowRanking] = useState(false);
   const [level, setLevel] = useState(1);
   const [timeLeft, setTimeLeft] = useState(LEVEL_TIMES[0]);
 
@@ -352,10 +353,10 @@ export default function Game() {
     }
   }, []);
 
-  // Load rankings
+  // Load rankings on mount and when returning to home
   useEffect(() => {
     getTopRanks(10).then(setRankings).catch(() => {});
-  }, []);
+  }, [difficulty]);
 
   // Keyboard: Escape or P to toggle pause
   useEffect(() => {
@@ -1163,11 +1164,21 @@ export default function Game() {
             </button>
           ))}
         </div>
-        {/* Rankings */}
-        {rankings.length > 0 && (
-          <div className="w-full max-w-[300px] mt-4">
-            <p className="text-sm font-bold text-zinc-300 mb-2 text-center">🏆 TOP 10</p>
+        {/* Ranking button + panel */}
+        <button onClick={async () => {
+          if (!showRanking) {
+            const r = await getTopRanks(10);
+            setRankings(r);
+          }
+          setShowRanking(!showRanking);
+        }}
+          className="px-5 py-2 text-sm bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded-lg transition-colors">
+          🏆 랭킹 보기
+        </button>
+        {showRanking && (
+          <div className="w-full max-w-[300px]">
             <div className="bg-zinc-900 rounded-lg border border-zinc-700 overflow-hidden">
+              {rankings.length === 0 && <p className="text-xs text-zinc-500 text-center py-3">랭킹 데이터 없음</p>}
               {rankings.map((r, i) => (
                 <div key={i} className={`flex items-center justify-between px-3 py-1.5 text-xs ${i === 0 ? "bg-yellow-900/30" : i === 1 ? "bg-zinc-800/50" : i === 2 ? "bg-orange-900/20" : ""}`}>
                   <div className="flex items-center gap-2">
