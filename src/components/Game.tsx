@@ -1178,14 +1178,14 @@ export default function Game() {
       {/* Control bar — above canvas */}
       {launched && (
         <div className="flex items-center justify-between w-full px-1 mb-1 text-xs">
-          <button onClick={() => { stopBGM(); restartGame(); setDifficulty(null); }}
-            className="w-7 h-7 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400 text-sm">
-            ←
-          </button>
           <div className="flex items-center gap-1">
+            <button onClick={() => { stopBGM(); restartGame(); setDifficulty(null); }}
+              className="w-7 h-7 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400 text-sm">
+              ←
+            </button>
             <button onClick={() => setShowVolume(!showVolume)}
               className="w-7 h-7 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400 text-sm">
-              {bgmVol > 0 ? "♪" : "♪̸"}
+              {bgmVol > 0 ? "♪" : "✕"}
             </button>
             {showVolume && (
               <input type="range" min="0" max="100" value={Math.round(bgmVol * 100)}
