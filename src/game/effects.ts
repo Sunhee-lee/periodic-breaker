@@ -105,8 +105,8 @@ function hasActiveEffect(state: GameState, key: string): boolean {
   return state.timedEffects.some(e => e.key === key && e.endTime > state.now);
 }
 
-const SPEED_KEYS = ["ball_speed", "slow_control", "heavy_block", "state_change", "slippery"];
-const SIZE_KEYS = ["ball_powerup", "conduct", "rare_support"];
+const SPEED_KEYS = ["ball_speed", "slow_control", "heavy_block", "state_change", "slippery", "heavy_ball", "slow_field"];
+const SIZE_KEYS = ["ball_powerup", "conduct", "rare_support", "heavy_ball"];
 
 /** Revert speed only if no other speed effect is active */
 function revertSpeed(state: GameState, myKey: string) {
@@ -426,6 +426,49 @@ register("flash_bonus", (block, state) => {
   const bonus = block.params.bonus ?? 500;
   state.addScore(bonus);
   state.spawnVfx("flash_white", block.x, block.y, { bonus });
+});
+
+/** Au: score multiplier buff for a duration */
+register("score_multiplier", (block, state) => {
+  const mult = block.params.multiplier ?? 2.0;
+  const dur = block.params.duration ?? 5000;
+  state.scoreMultiplier = mult;
+  state.spawnVfx("flash_white", block.x, block.y, { bonus: `x${mult}` });
+  pushTimedEffect(state, {
+    key: "score_multiplier",
+    endTime: state.now + dur,
+    revert: () => { state.scoreMultiplier = 1; },
+  });
+});
+
+/** Fe: heavy ball — slower but maintains velocity through bounces */
+register("heavy_ball", (block, state) => {
+  const mult = block.params.slowMultiplier ?? 0.85;
+  const dur = block.params.duration ?? 4000;
+  state.ball.speed = state.ball.baseSpeed * mult;
+  state.ball.radius = state.ball.baseRadius * 1.15; // slightly bigger = heavier feel
+  state.spawnVfx("heavy_impact", block.x, block.y);
+  pushTimedEffect(state, {
+    key: "heavy_ball",
+    endTime: state.now + dur,
+    revert: () => {
+      revertSpeed(state, "heavy_ball");
+      revertSize(state, "heavy_ball");
+    },
+  });
+});
+
+/** N: slow field — strong speed reduction */
+register("slow_field", (block, state) => {
+  const mult = block.params.slowMultiplier ?? 0.6;
+  const dur = block.params.duration ?? 2000;
+  state.ball.speed = state.ball.baseSpeed * mult;
+  state.spawnVfx("freeze_ice", block.x, block.y);
+  pushTimedEffect(state, {
+    key: "slow_field",
+    endTime: state.now + dur,
+    revert: () => revertSpeed(state, "slow_field"),
+  });
 });
 
 register("score_block", (block, state) => {
