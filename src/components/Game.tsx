@@ -462,9 +462,16 @@ export default function Game() {
         const el = ELEMENTS.find((e) => e.atomicNumber === blk.id);
         const colors = el ? GROUP_COLORS[el.group] : null;
         const existingTexts = floatingTextsRef.current;
-        let ty = GH * 0.45;
+        const maxY = GH * 0.75; // never go below 75% of canvas (above paddle)
+        let ty = GH * 0.35;
         for (const ft of existingTexts) {
-          if (Math.abs(ft.y - ty) < 22) ty += 22;
+          if (!ft.text.includes("COMBO") && Math.abs(ft.y - ty) < 20) ty += 20;
+        }
+        // If would overflow into paddle area, remove oldest non-combo text
+        if (ty > maxY) {
+          const oldest = existingTexts.findIndex(ft => !ft.text.includes("COMBO"));
+          if (oldest >= 0) existingTexts.splice(oldest, 1);
+          ty = maxY;
         }
         existingTexts.push({
           text: getFlavorText(blk.id),
