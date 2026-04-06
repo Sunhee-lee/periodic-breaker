@@ -427,11 +427,10 @@ export default function Game() {
         const s = sp / mag;
         Matter.Body.setVelocity(b, { x: vx * s, y: vy * s });
       }
-      // Prevent horizontal stall
-      if (Math.abs(b.velocity.y) < 1) {
-        const sign = b.velocity.y >= 0 ? 1 : -1;
-        const ny = sign * 1.5;
-        const nx = Math.sign(b.velocity.x) * Math.sqrt(sp * sp - ny * ny);
+      // Prevent horizontal stall — force ball downward toward paddle
+      if (Math.abs(b.velocity.y) < 1.5) {
+        const ny = 2.5; // always push down so it returns to paddle
+        const nx = Math.sign(b.velocity.x || 1) * Math.sqrt(Math.max(0, sp * sp - ny * ny));
         Matter.Body.setVelocity(b, { x: nx, y: ny });
       }
     });
