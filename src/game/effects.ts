@@ -37,6 +37,7 @@ export interface BallState {
   trailInterval: number;
   pierce: boolean;
   pierceEnd: number;
+  pierceHits: number; // counts paddle touches while piercing
   powerHit: boolean;
   powerHitEnd: number;
 }
@@ -96,7 +97,7 @@ export function executeEffect(effectName: string, block: BlockRuntime, state: Ga
 /** Radioactive: ball turns neon and pierces through all blocks until it hits the paddle */
 register("radioactive_pierce", (block, state) => {
   state.ball.pierce = true;
-  // No timer — resets only when ball hits paddle
+  state.ball.pierceHits = 0; // resets on 2nd paddle touch
   state.spawnVfx("radiation_burst", block.x, block.y, { radius: 40 });
 });
 

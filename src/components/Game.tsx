@@ -283,7 +283,7 @@ export default function Game() {
         radius: BALL_R, baseRadius: BALL_R,
         speed: BASE_SPEED, baseSpeed: BASE_SPEED,
         trailDamage: false, trailEnd: 0, trailInterval: 120,
-        pierce: false, pierceEnd: 0,
+        pierce: false, pierceEnd: 0, pierceHits: 0,
         powerHit: false, powerHitEnd: 0,
       },
       paddle: {
@@ -310,15 +310,20 @@ export default function Game() {
         // score
         const points = blk.id * 10;
         scoreRef.current += Math.round(points * gs.scoreMultiplier);
-        // floating element info text
+        // floating element info text — stagger Y to avoid overlap
         const el = ELEMENTS.find((e) => e.atomicNumber === blk.id);
         const colors = el ? GROUP_COLORS[el.group] : null;
-        floatingTextsRef.current.push({
+        const existingTexts = floatingTextsRef.current;
+        let ty = GH * 0.45;
+        for (const ft of existingTexts) {
+          if (Math.abs(ft.y - ty) < 20) ty += 20;
+        }
+        existingTexts.push({
           text: getFlavorText(blk.id),
           x: GW / 2,
-          y: GH / 2,
-          life: 70,
-          maxLife: 70,
+          y: ty,
+          life: 50,
+          maxLife: 50,
           color: colors?.border ?? "#ffffff",
         });
         // trigger this block's own effect (no area damage possible)
@@ -448,8 +453,14 @@ export default function Game() {
             x: Math.cos(angle) * sp,
             y: Math.sin(angle) * sp,
           });
-          // Reset radioactive pierce on paddle hit
-          gs.ball.pierce = false;
+          // Radioactive pierce: survives 1st paddle hit, resets on 2nd
+          if (gs.ball.pierce) {
+            gs.ball.pierceHits += 1;
+            if (gs.ball.pierceHits >= 2) {
+              gs.ball.pierce = false;
+              gs.ball.pierceHits = 0;
+            }
+          }
           continue;
         }
 
@@ -689,6 +700,15 @@ export default function Game() {
         ctx.arc(b.position.x, b.position.y, br, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
+
+        // ☢ radiation symbol when pierce is active
+        if (isPiercing) {
+          ctx.fillStyle = "#052e16";
+          ctx.font = `bold ${Math.round(br * 1.4)}px sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("☢", b.position.x, b.position.y);
+        }
       }
 
       // ── Floating element info texts ──
