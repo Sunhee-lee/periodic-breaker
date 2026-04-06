@@ -1165,7 +1165,7 @@ export default function Game() {
             <p className="text-2xl sm:text-3xl font-bold text-zinc-200 mb-3">PAUSED</p>
             <button onClick={togglePause}
               className="px-5 py-2 text-sm sm:text-base bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-colors mb-2">
-              Resume
+              재시작
             </button>
             <button onClick={() => setShowCollection(true)}
               className="px-5 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors">
@@ -1185,33 +1185,28 @@ export default function Game() {
                 닫기
               </button>
             </div>
-            {/* Selected element detail — above grid if element is in top half, below if bottom */}
-            {selectedElement && collected.has(selectedElement) && (ELEMENTS.find(e => e.atomicNumber === selectedElement)?.atomicNumber ?? 0) <= 59 && (
-              <div className="mb-2 p-2 bg-zinc-800 rounded-lg text-center">
-                <p className="text-sm font-bold text-zinc-100">{getFlavorText(selectedElement)}</p>
-              </div>
-            )}
-            <div className="grid grid-cols-6 sm:grid-cols-9 gap-1">
+            <div className="grid grid-cols-9 sm:grid-cols-12 gap-0.5">
               {ELEMENTS.map((el) => {
                 const found = collected.has(el.atomicNumber);
                 const colors = GROUP_COLORS[el.group];
+                const isSelected = selectedElement === el.atomicNumber;
                 return (
-                  <div key={el.atomicNumber}
-                    onClick={() => found ? setSelectedElement(el.atomicNumber === selectedElement ? null : el.atomicNumber) : null}
-                    className={`flex flex-col items-center justify-center rounded p-0.5 text-center ${found ? "cursor-pointer hover:brightness-125" : "opacity-20"}`}
-                    style={{ background: found ? colors.fill : "#27272a", minHeight: "18px", outline: selectedElement === el.atomicNumber ? "2px solid white" : "none" }}>
-                    <span className="text-[8px] text-zinc-400">{el.atomicNumber}</span>
-                    <span className="text-[10px] font-bold" style={{ color: found ? colors.text : "#71717a" }}>{el.symbol}</span>
+                  <div key={el.atomicNumber}>
+                    <div
+                      onClick={() => found ? setSelectedElement(isSelected ? null : el.atomicNumber) : null}
+                      className={`flex items-center justify-center rounded text-center ${found ? "cursor-pointer hover:brightness-125" : "opacity-20"}`}
+                      style={{ background: found ? colors.fill : "#27272a", height: "16px", fontSize: "7px", fontWeight: 700, color: found ? colors.text : "#71717a", outline: isSelected ? "1.5px solid white" : "none" }}>
+                      {el.symbol}
+                    </div>
+                    {isSelected && found && (
+                      <div className="col-span-full bg-zinc-800 rounded px-1 py-0.5 mt-0.5">
+                        <p className="text-[9px] text-zinc-200 leading-tight">{getFlavorText(el.atomicNumber)}</p>
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
-            {/* Detail below grid for bottom-half elements */}
-            {selectedElement && collected.has(selectedElement) && (ELEMENTS.find(e => e.atomicNumber === selectedElement)?.atomicNumber ?? 0) > 59 && (
-              <div className="mt-2 p-2 bg-zinc-800 rounded-lg text-center">
-                <p className="text-sm font-bold text-zinc-100">{getFlavorText(selectedElement)}</p>
-              </div>
-            )}
           </div>
         )}
 
