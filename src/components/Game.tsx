@@ -1163,17 +1163,6 @@ export default function Game() {
             <span className="text-zinc-400 uppercase tracking-wide">Score</span>
             <span className="text-base sm:text-lg font-mono font-bold text-indigo-400">{score}</span>
           </div>
-          {launched && !gameOver && !stageClear && (
-            <button onClick={togglePause}
-              className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 transition-colors text-zinc-300"
-              aria-label={paused ? "Resume" : "Pause"}>
-              {paused ? (
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><polygon points="3,1 12,7 3,13" /></svg>
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="2" y="1" width="3.5" height="12" /><rect x="8.5" y="1" width="3.5" height="12" /></svg>
-              )}
-            </button>
-          )}
         </div>
       </div>
 
@@ -1182,6 +1171,21 @@ export default function Game() {
         <canvas ref={canvasRef} width={GW} height={GH}
           className="block w-full h-auto cursor-none touch-none"
           style={{ aspectRatio: `${GW}/${GH}` }} />
+
+        {/* Bottom buttons — back (left) + pause (right) */}
+        {launched && !gameOver && !stageClear && !paused && (
+          <div className="absolute bottom-2 left-0 right-0 flex justify-between px-3 z-10 pointer-events-none">
+            <button onClick={() => { stopBGM(); restartGame(); setDifficulty(null); }}
+              className="pointer-events-auto w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-600 text-zinc-300 text-xs">
+              ←
+            </button>
+            <button onClick={togglePause}
+              className="pointer-events-auto w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-600 text-zinc-300"
+              aria-label="Pause">
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor"><rect x="2" y="1" width="3.5" height="12" /><rect x="8.5" y="1" width="3.5" height="12" /></svg>
+            </button>
+          </div>
+        )}
 
         {/* Pause overlay */}
         {paused && !showCollection && (
@@ -1201,16 +1205,16 @@ export default function Game() {
 
         {/* Collection panel */}
         {showCollection && (
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-20 overflow-y-auto p-3">
-            <div className="flex justify-between items-center mb-2">
-              <p className="text-lg font-bold text-zinc-200">원소 도감 ({levelCollected.size}/118)</p>
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-sm z-20 flex flex-col p-2">
+            <div className="flex justify-between items-center mb-1">
+              <p className="text-sm font-bold text-zinc-200">원소 도감 ({levelCollected.size}/118)</p>
               <button onClick={() => setShowCollection(false)}
-                className="px-3 py-1 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded transition-colors">
+                className="px-2 py-0.5 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded transition-colors">
                 닫기
               </button>
             </div>
-            {/* 18-column periodic table grid — fits one page */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(18, 1fr)", gap: "1px" }}>
+            {/* 18-column periodic table — fills available space */}
+            <div className="flex-1" style={{ display: "grid", gridTemplateColumns: "repeat(18, 1fr)", gridTemplateRows: "repeat(9, 1fr)", gap: "1px" }}>
               {Array.from({ length: 9 * 18 }, (_, i) => {
                 const row = Math.floor(i / 18) + 1;
                 const col = (i % 18) + 1;
@@ -1221,11 +1225,11 @@ export default function Game() {
                 const krName = getKrName(el.atomicNumber);
                 return (
                   <div key={el.atomicNumber}
-                    className={`flex flex-col items-center justify-center rounded ${found ? "" : "opacity-15"}`}
-                    style={{ background: found ? colors.fill : "#27272a", aspectRatio: "1" }}>
-                    <span style={{ fontSize: "4px", color: found ? "rgba(255,255,255,0.5)" : "#555", lineHeight: 1 }}>{el.atomicNumber}</span>
-                    <span style={{ fontSize: "7px", fontWeight: 700, color: found ? "#fff" : "#555", lineHeight: 1 }}>{el.symbol}</span>
-                    <span style={{ fontSize: "3.5px", color: found ? "rgba(255,255,255,0.5)" : "#444", lineHeight: 1 }}>{krName.slice(0, 3)}</span>
+                    className={`flex flex-col items-center justify-center rounded overflow-hidden ${found ? "" : "opacity-15"}`}
+                    style={{ background: found ? colors.fill : "#27272a" }}>
+                    <span style={{ fontSize: "clamp(3px,0.8vw,5px)", color: found ? "rgba(255,255,255,0.5)" : "#555", lineHeight: 1 }}>{el.atomicNumber}</span>
+                    <span style={{ fontSize: "clamp(5px,1.4vw,9px)", fontWeight: 700, color: found ? "#fff" : "#555", lineHeight: 1.1 }}>{el.symbol}</span>
+                    <span style={{ fontSize: "clamp(3px,0.7vw,4px)", color: found ? "rgba(255,255,255,0.5)" : "#444", lineHeight: 1 }}>{krName.slice(0, 3)}</span>
                   </div>
                 );
               })}
