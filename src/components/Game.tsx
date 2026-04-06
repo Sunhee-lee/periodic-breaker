@@ -29,7 +29,14 @@ const DIFF_PADDLE: Record<string, number> = { easy: 130, normal: 100, hard: 70 }
 
 // Top 3 most radioactive elements (shortest half-life) → multiball
 const MULTIBALL_ELEMENTS = new Set([118, 117, 116]); // Og, Ts, Lv
+
 const BASE_SPEED = 6;
+
+// Level configs
+const LEVEL_TIME = 120; // 2 minutes per level
+const LEVEL_SPEED = [BASE_SPEED, BASE_SPEED * 1.4, BASE_SPEED * 1.8]; // L1, L2, L3
+const LEVEL_BG: string[] = ["#0f0f1a", "#0f1a14", "#1a0f1a"]; // dark blue, dark green, dark purple
+const LEVEL_BLOCK_ALPHA: number[] = [1, 1.2, 1.4]; // block color intensity multiplier
 const COLS = 18;
 const BG = 1;
 const BM = 4;
@@ -110,6 +117,8 @@ export default function Game() {
   const [collected, setCollected] = useState<Set<number>>(new Set());
   const [showCollection, setShowCollection] = useState(false);
   const [selectedElement, setSelectedElement] = useState<number | null>(null);
+  const [level, setLevel] = useState(1);
+  const [timeLeft, setTimeLeft] = useState(LEVEL_TIME);
 
   const livesRef = useRef(LIVES);
   const scoreRef = useRef(0);
@@ -129,7 +138,9 @@ export default function Game() {
   const gasZoneEndRef = useRef(0);
   const gasZoneHeightRef = useRef(0);
   const comboRef = useRef(0);
-  const shakeRef = useRef(0); // remaining shake frames
+  const shakeRef = useRef(0);
+  const levelRef = useRef(1);
+  const timerStartRef = useRef(0); // performance.now() when launched // remaining shake frames
   const collectedRef = useRef<Set<number>>(new Set());
   const multiBallsRef = useRef<{ body: Matter.Body; expiry: number }[]>([]); // extra balls with expiry
 
@@ -187,10 +198,12 @@ export default function Game() {
 
   const launchBall = useCallback(() => {
     if (!ballRef.current || launchedRef.current || goRef.current || clearRef.current) return;
+    const sp = LEVEL_SPEED[levelRef.current - 1] ?? BASE_SPEED;
     const a = -Math.PI / 2 + (Math.random() - 0.5) * 0.6;
+    if (timerStartRef.current === 0) timerStartRef.current = performance.now();
     Matter.Body.setVelocity(ballRef.current, {
-      x: Math.cos(a) * BASE_SPEED,
-      y: Math.sin(a) * BASE_SPEED,
+      x: Math.cos(a) * sp,
+      y: Math.sin(a) * sp,
     });
     launchedRef.current = true;
     setLaunched(true);
@@ -228,11 +241,63 @@ export default function Game() {
       try { Matter.Composite.remove(engine.world, mb.body); } catch { /* */ }
     }
     multiBallsRef.current = [];
+    levelRef.current = 1;
+    timerStartRef.current = 0;
+    setLevel(1);
+    setTimeLeft(LEVEL_TIME);
     setGameOver(false);
     setStageClear(false);
+    setShowCollection(false);
     setBlocksLeft(DESTROYABLE_COUNT);
     setScore(0);
     setLives(LIVES);
+    resetBall();
+  }, [resetBall, createBlocks]);
+
+  const nextLevel = useCallback(() => {
+    const engine = engineRef.current;
+    if (!engine) return;
+    const newLv = levelRef.current + 1;
+    if (newLv > 3) return; // max level 3
+    // Remove old blocks
+    for (const b of blocksRef.current) {
+      const body = (b as BlockRuntime & { body: Matter.Body }).body;
+      if (body) try { Matter.Composite.remove(engine.world, body); } catch { /* */ }
+    }
+    // Remove multiball
+    for (const mb of multiBallsRef.current) {
+      try { Matter.Composite.remove(engine.world, mb.body); } catch { /* */ }
+    }
+    multiBallsRef.current = [];
+    // Reset blocks
+    blocksRef.current = createBlocks(engine);
+    levelRef.current = newLv;
+    timerStartRef.current = 0;
+    clearRef.current = false;
+    ballSpeedRef.current = LEVEL_SPEED[newLv - 1] ?? BASE_SPEED;
+    ballRadiusRef.current = BALL_R;
+    paddleSpeedMultRef.current = 1;
+    floorShieldEndRef.current = 0;
+    trajectoryEndRef.current = 0;
+    scoreMultRef.current = 1;
+    timedEffectsRef.current = [];
+    gasZoneEndRef.current = 0;
+    comboRef.current = 0;
+    shakeRef.current = 0;
+    vfxRef.current.clear();
+    floatingTextsRef.current = [];
+    if (stateRef.current) {
+      stateRef.current.ball.speed = LEVEL_SPEED[newLv - 1] ?? BASE_SPEED;
+      stateRef.current.ball.baseSpeed = LEVEL_SPEED[newLv - 1] ?? BASE_SPEED;
+      stateRef.current.ball.pierce = false;
+      stateRef.current.ball.radius = BALL_R;
+      stateRef.current.stageClear = false;
+    }
+    setLevel(newLv);
+    setTimeLeft(LEVEL_TIME);
+    setStageClear(false);
+    setShowCollection(false);
+    setBlocksLeft(DESTROYABLE_COUNT);
     resetBall();
   }, [resetBall, createBlocks]);
 
@@ -433,6 +498,20 @@ export default function Game() {
     Matter.Events.on(engine, "afterUpdate", () => {
       const now = performance.now();
       gs.now = now;
+
+      // Timer countdown
+      if (timerStartRef.current > 0 && launchedRef.current && !goRef.current && !clearRef.current) {
+        const elapsed = (now - timerStartRef.current) / 1000;
+        const remaining = Math.max(0, LEVEL_TIME - elapsed);
+        setTimeLeft(Math.ceil(remaining));
+        if (remaining <= 0) {
+          // Time up = game over
+          goRef.current = true;
+          setGameOver(true);
+          if (ballRef.current) Matter.Body.setVelocity(ballRef.current, { x: 0, y: 0 });
+          return;
+        }
+      }
 
       // Expire timed effects
       for (let i = gs.timedEffects.length - 1; i >= 0; i--) {
@@ -641,7 +720,7 @@ export default function Game() {
       }
 
       // BG
-      ctx.fillStyle = "#0f0f1a";
+      ctx.fillStyle = LEVEL_BG[levelRef.current - 1] ?? "#0f0f1a";
       ctx.fillRect(0, 0, GW, GH);
 
       // Grid
@@ -678,8 +757,9 @@ export default function Game() {
         const blockAlpha = 0.35 + hpRatio * 0.65; // range: 0.35 (near death) → 1.0 (full)
         ctx.globalAlpha = blockAlpha;
 
-        // Glow
-        ctx.shadowBlur = 8;
+        // Glow — intensifies per level
+        const lvGlow = LEVEL_BLOCK_ALPHA[levelRef.current - 1] ?? 1;
+        ctx.shadowBlur = 8 * lvGlow;
         ctx.shadowColor = isFrozen ? "rgba(56,189,248,0.6)" : colors.glow;
 
         // Fill
@@ -974,9 +1054,10 @@ export default function Game() {
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
-          <div className="flex items-center gap-1">
-            <span className="text-zinc-400 uppercase tracking-wide">{collected.size}/118</span>
-          </div>
+          <span className="text-xs font-bold text-purple-400">Lv.{level}</span>
+          <span className={`text-base sm:text-lg font-mono font-bold ${timeLeft <= 30 ? "text-red-400" : "text-zinc-300"}`}>
+            {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")}
+          </span>
           <div className="flex items-center gap-1">
             <span className="text-zinc-400 uppercase tracking-wide">Score</span>
             <span className="text-base sm:text-lg font-mono font-bold text-indigo-400">{score}</span>
@@ -1027,6 +1108,12 @@ export default function Game() {
                 닫기
               </button>
             </div>
+            {/* Selected element detail — above grid */}
+            {selectedElement && collected.has(selectedElement) && (
+              <div className="mb-2 p-2 bg-zinc-800 rounded-lg text-center">
+                <p className="text-sm font-bold text-zinc-100">{getFlavorText(selectedElement)}</p>
+              </div>
+            )}
             <div className="grid grid-cols-6 sm:grid-cols-9 gap-1">
               {ELEMENTS.map((el) => {
                 const found = collected.has(el.atomicNumber);
@@ -1042,12 +1129,6 @@ export default function Game() {
                 );
               })}
             </div>
-            {/* Selected element detail */}
-            {selectedElement && collected.has(selectedElement) && (
-              <div className="mt-3 p-3 bg-zinc-800 rounded-lg text-center">
-                <p className="text-base font-bold text-zinc-100">{getFlavorText(selectedElement)}</p>
-              </div>
-            )}
           </div>
         )}
 
@@ -1055,18 +1136,41 @@ export default function Game() {
         {(!launched || gameOver || stageClear) && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-none">
             {stageClear ? (
-              <>
-                <p className="text-2xl sm:text-3xl font-bold text-emerald-400 mb-1">Stage Clear!</p>
-                <p className="text-sm sm:text-base text-zinc-300 mb-3 sm:mb-4">118개 원소를 모두 정복했습니다!</p>
-                <p className="text-sm text-zinc-400 mb-3 sm:mb-4">Final Score: <span className="text-indigo-400 font-bold">{score}</span></p>
-                <button onClick={restartGame}
-                  className="pointer-events-auto px-5 py-2 text-sm sm:text-base bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-colors shadow-[0_0_20px_rgba(16,185,129,0.3)]">
-                  다시 시작
-                </button>
-              </>
+              <div className="flex flex-col items-center w-full max-h-full overflow-y-auto p-4 pointer-events-auto">
+                <p className="text-2xl sm:text-3xl font-bold text-emerald-400 mb-1">Level {level} Clear!</p>
+                <p className="text-sm text-zinc-400 mb-2">Score: <span className="text-indigo-400 font-bold">{score}</span> | 수집: {collected.size}/118</p>
+                {/* Mini collection grid */}
+                <div className="grid grid-cols-9 gap-0.5 mb-3 w-full max-w-[360px]">
+                  {ELEMENTS.map((el) => {
+                    const found = collected.has(el.atomicNumber);
+                    const clr = GROUP_COLORS[el.group];
+                    return (
+                      <div key={el.atomicNumber}
+                        className={`flex items-center justify-center rounded ${found ? "" : "opacity-15"}`}
+                        style={{ background: found ? clr.fill : "#27272a", height: "20px", fontSize: "8px", color: found ? clr.text : "#555" }}>
+                        {el.symbol}
+                      </div>
+                    );
+                  })}
+                </div>
+                {level < 3 ? (
+                  <button onClick={nextLevel}
+                    className="px-5 py-2 text-sm sm:text-base bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-colors shadow-[0_0_20px_rgba(16,185,129,0.3)] mb-2">
+                    Level {level + 1} 시작
+                  </button>
+                ) : (
+                  <>
+                    <p className="text-lg font-bold text-yellow-400 mb-2">All Clear!</p>
+                    <button onClick={restartGame}
+                      className="px-5 py-2 text-sm sm:text-base bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-colors">
+                      처음부터
+                    </button>
+                  </>
+                )}
+              </div>
             ) : gameOver ? (
               <>
-                <p className="text-3xl sm:text-4xl font-bold text-red-400 mb-2">GAME OVER</p>
+                <p className="text-3xl sm:text-4xl font-bold text-red-400 mb-2">{timeLeft <= 0 ? "TIME UP!" : "GAME OVER"}</p>
                 <p className="text-sm text-zinc-400 mb-3 sm:mb-4">Final Score: <span className="text-indigo-400 font-bold">{score}</span></p>
                 <button onClick={restartGame}
                   className="pointer-events-auto px-5 py-2 text-sm sm:text-base bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-colors shadow-[0_0_20px_rgba(99,102,241,0.3)]">
