@@ -436,6 +436,14 @@ export default function Game() {
     });
 
     // ── Collision handler ──
+    // Save pre-collision velocity so pierce can restore it
+    let savedVx = 0, savedVy = 0;
+    Matter.Events.on(engine, "beforeUpdate", () => {
+      if (ballRef.current) {
+        savedVx = ballRef.current.velocity.x;
+        savedVy = ballRef.current.velocity.y;
+      }
+    });
     Matter.Events.on(engine, "collisionStart", (event) => {
       for (const pair of event.pairs) {
         // Paddle
@@ -468,7 +476,6 @@ export default function Game() {
         const isBlkB = pair.bodyB.label.startsWith("block-");
         if (isBlkA || isBlkB) {
           const blkBody = isBlkA ? pair.bodyA : pair.bodyB;
-          const ballBody = isBlkA ? pair.bodyB : pair.bodyA;
           const blk = blocksRef.current.find(
             (b) => (b as BlockRuntime & { body: Matter.Body }).body === blkBody && b.alive,
           );
@@ -480,30 +487,36 @@ export default function Game() {
             gs.paddle.y = paddleRef.current.position.y;
           }
 
-          // Power hit = double damage
-          const dmg = gs.ball.powerHit ? 2 : 1;
-          blk.hp -= dmg;
-
-          if (blk.hp <= 0 && blk.breakable) {
-            gs.destroyBlock(blk);
-          } else if (!blk.breakable) {
-            executeEffect(blk.effect, blk, gs);
+          if (gs.ball.pierce) {
+            // Radioactive pierce: instant destroy + pass through
+            if (blk.breakable) {
+              blk.hp = 0;
+              gs.destroyBlock(blk);
+            }
           } else {
-            // damaged but alive – reflect effects still fire
-            if (blk.effect === "sharp_reflect" || blk.effect === "metal_reflect") {
+            // Normal hit
+            const dmg = gs.ball.powerHit ? 2 : 1;
+            blk.hp -= dmg;
+
+            if (blk.hp <= 0 && blk.breakable) {
+              gs.destroyBlock(blk);
+            } else if (!blk.breakable) {
               executeEffect(blk.effect, blk, gs);
+            } else {
+              if (blk.effect === "sharp_reflect" || blk.effect === "metal_reflect") {
+                executeEffect(blk.effect, blk, gs);
+              }
             }
           }
 
-          // Pierce: keep ball velocity through the block
+          // Pierce: restore pre-collision velocity so ball passes through
           if (gs.ball.pierce && ballRef.current) {
             const sp = gs.ball.speed;
-            const bv = ballRef.current.velocity;
-            const mag = Math.sqrt(bv.x * bv.x + bv.y * bv.y);
+            const mag = Math.sqrt(savedVx * savedVx + savedVy * savedVy);
             if (mag > 0) {
               Matter.Body.setVelocity(ballRef.current, {
-                x: (bv.x / mag) * sp,
-                y: (bv.y / mag) * sp,
+                x: (savedVx / mag) * sp,
+                y: (savedVy / mag) * sp,
               });
             }
           }
