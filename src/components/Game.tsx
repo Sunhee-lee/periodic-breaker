@@ -15,7 +15,7 @@ import { getKrName } from "@/game/elementKrNames";
 import {
   sndPaddle, sndBlockBreak, sndExplosion, sndRadioactive,
   sndCombo, sndPowerup, sndLifeLost,
-  startBGM, stopBGM,
+  startBGM, stopBGM, setBGMVolume,
 } from "@/game/sound";
 
 // ── Constants ─────────────────────────────────────────────
@@ -136,6 +136,7 @@ export default function Game() {
   const [collected, setCollected] = useState<Set<number>>(new Set());
   const [levelCollected, setLevelCollected] = useState<Set<number>>(new Set());
   const [showCollection, setShowCollection] = useState(false);
+  const [bgmVol, setBgmVol] = useState(0.3);
   const [level, setLevel] = useState(1);
   const [timeLeft, setTimeLeft] = useState(LEVEL_TIMES[0]);
 
@@ -504,7 +505,7 @@ export default function Game() {
         if (MULTIBALL_ELEMENTS.has(blk.id)) {
           for (let i = 0; i < 2; i++) {
             const angle = -Math.PI / 2 + (i === 0 ? -0.5 : 0.5);
-            const mb = Matter.Bodies.circle(blk.x, blk.y, BALL_R, {
+            const mb = Matter.Bodies.circle(blk.x, blk.y + BH + BALL_R + 2, BALL_R, {
               restitution: 1, friction: 0, frictionAir: 0, frictionStatic: 0,
               inertia: Infinity, inverseInertia: 0, density: 1,
               collisionFilter: { category: CAT.BALL, mask: CAT.WALL | CAT.PADDLE | CAT.BLOCK },
@@ -1172,21 +1173,6 @@ export default function Game() {
           className="block w-full h-auto cursor-none touch-none"
           style={{ aspectRatio: `${GW}/${GH}` }} />
 
-        {/* Bottom buttons — back (left) + pause (right) */}
-        {launched && !gameOver && !stageClear && !paused && (
-          <div className="absolute bottom-2 left-0 right-0 flex justify-between px-3 z-10 pointer-events-none">
-            <button onClick={() => { stopBGM(); restartGame(); setDifficulty(null); }}
-              className="pointer-events-auto w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-600 text-zinc-300 text-xs">
-              ←
-            </button>
-            <button onClick={togglePause}
-              className="pointer-events-auto w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-600 text-zinc-300"
-              aria-label="Pause">
-              <svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor"><rect x="2" y="1" width="3.5" height="12" /><rect x="8.5" y="1" width="3.5" height="12" /></svg>
-            </button>
-          </div>
-        )}
-
         {/* Pause overlay */}
         {paused && !showCollection && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm z-10">
@@ -1317,6 +1303,31 @@ export default function Game() {
           </div>
         )}
       </div>
+
+      {/* Bottom bar — outside canvas */}
+      {launched && (
+        <div className="flex items-center justify-between w-full px-1 mt-1 text-xs">
+          <button onClick={() => { stopBGM(); restartGame(); setDifficulty(null); }}
+            className="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400">
+            ← 돌아가기
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-zinc-500">♪</span>
+            <input type="range" min="0" max="100" value={Math.round(bgmVol * 100)}
+              onChange={(e) => { const v = Number(e.target.value) / 100; setBgmVol(v); setBGMVolume(v); }}
+              className="w-16 sm:w-20 h-1 accent-indigo-500" />
+          </div>
+          {!gameOver && !stageClear && !paused && (
+            <button onClick={togglePause}
+              className="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400">
+              일시정지
+            </button>
+          )}
+          {(gameOver || stageClear || paused) && (
+            <div className="w-16" />
+          )}
+        </div>
+      )}
     </div>
   );
 }

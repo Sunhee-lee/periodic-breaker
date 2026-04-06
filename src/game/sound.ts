@@ -149,6 +149,14 @@ export function startBGM(level: number) {
   } catch { /* */ }
 }
 
+export function setBGMVolume(vol: number) {
+  if (bgmAudio) bgmAudio.volume = Math.max(0, Math.min(1, vol));
+}
+
+export function getBGMVolume(): number {
+  return bgmAudio?.volume ?? 0.3;
+}
+
 export function stopBGM() {
   if (bgmAudio) {
     bgmAudio.pause();
