@@ -236,7 +236,6 @@ const OVERRIDES: Record<number, PartialOverride> = {
   4:  { group: "defense",  effect: "shard_splash",   vfx: "shard_splash",   durability: 2, params: { shardCount: 4, range: 50 } },
   6:  { group: "defense",  effect: "none",           vfx: "none",           durability: 3, rarity: "rare" },
   13: { group: "defense",  effect: "sharp_reflect",  vfx: "sharp_reflect",  durability: 2, params: { reflectMultiplier: 1.25 } },
-  26: { group: "defense",  effect: "metal_reflect",  vfx: "metal_reflect",  durability: 2, rarity: "rare", params: { reflectMultiplier: 1.3 } },
   47: { group: "defense",  effect: "sharp_reflect",  vfx: "sharp_reflect",  durability: 2, rarity: "epic", params: { reflectMultiplier: 1.35 } },
   82: { group: "defense",  effect: "heavy_block",    vfx: "heavy_impact",   durability: 3, rarity: "epic", params: { speedReduction: 0.7 } },
   // Radioactive main-group elements
@@ -254,7 +253,6 @@ const OVERRIDES: Record<number, PartialOverride> = {
   14: { group: "utility",  effect: "trajectory_guide", vfx: "trajectory_line", params: { duration: 4000, guideBounces: 3 } },
   15: { group: "utility",  effect: "trail_damage",     vfx: "trail_fire",      params: { duration: 2000, interval: 120 } },
   18: { group: "defense",  effect: "floor_shield",     vfx: "shield_blue",     params: { duration: 4000 } },
-  29: { group: "utility",  effect: "conduct",          vfx: "conduct_pulse",   rarity: "rare", params: { duration: 2500 } },
   80: { group: "debuff",   effect: "slippery",         vfx: "none",            rarity: "rare", params: { duration: 2500 } },
 
   // ── DEBUFF ──
@@ -264,9 +262,11 @@ const OVERRIDES: Record<number, PartialOverride> = {
 
   // ── SCORE ──
   7:  { group: "score", effect: "freeze_score", vfx: "freeze_ice",  params: { multiplier: 1.5, duration: 3000 } },
-  12: { group: "utility", effect: "paddle_grow", vfx: "paddle_grow", params: { scale: 1.3, duration: 5000 } }, // Mg — 패들 확장
-  38: { group: "utility", effect: "paddle_grow", vfx: "paddle_grow", params: { scale: 1.25, duration: 4000 } }, // Sr — 패들 확장
-  56: { group: "utility", effect: "paddle_grow", vfx: "paddle_grow", params: { scale: 1.35, duration: 5000 } }, // Ba — 패들 확장 (더 큼)
+  12: { group: "score", effect: "flash_bonus",  vfx: "flash_white", params: { bonus: 500 } },  // Mg — 섬광 점수 보너스
+  // Paddle grow — 구조/전도성 금속
+  22: { group: "utility", effect: "paddle_grow", vfx: "paddle_grow", durability: 2, params: { scale: 1.3, duration: 5000 } },  // Ti — 가볍고 강한 금속
+  26: { group: "utility", effect: "paddle_grow", vfx: "paddle_grow", durability: 2, params: { scale: 1.35, duration: 5000 } }, // Fe — 건축의 기본, 넓은 방패
+  29: { group: "utility", effect: "paddle_grow", vfx: "paddle_grow", rarity: "rare", params: { scale: 1.3, duration: 4000 } }, // Cu — 전도성, 에너지 확산
   79: { group: "score", effect: "flash_bonus",  vfx: "flash_white", rarity: "legendary", params: { bonus: 2000 } },
 
   // Ca — alkaline earth defense

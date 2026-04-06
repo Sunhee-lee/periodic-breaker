@@ -83,42 +83,54 @@ export class VfxManager {
         this.spawnExplosion(x, y, "#fbbf24", "#ffffff", (extra?.radius as number ?? 170) * 0.5);
         this.flashes.push({ color: "rgba(251,191,36,0.15)", alpha: 0.4, decay: 0.03 });
         break;
-      // ── Element-specific colored explosions ──
+      // ── Element-specific colored explosions (BIG) ──
       case "explosion_hydrogen":
-        this.spawnExplosion(x, y, "#60a5fa", "#93c5fd", 80);
-        this.spawnExplosion(x, y, "#ffffff", "#bfdbfe", 50);
-        this.spawnRing(x, y, "#60a5fa", 40);
-        this.flashes.push({ color: "rgba(96,165,250,0.15)", alpha: 0.3, decay: 0.025 });
+        this.spawnExplosion(x, y, "#60a5fa", "#93c5fd", 200);
+        this.spawnExplosion(x, y, "#ffffff", "#bfdbfe", 130);
+        this.spawnExplosion(x, y, "#3b82f6", "#60a5fa", 80);
+        this.spawnRing(x, y, "#60a5fa", 90);
+        this.spawnRing(x, y, "#93c5fd", 50);
+        this.flashes.push({ color: "rgba(96,165,250,0.25)", alpha: 0.5, decay: 0.015 });
         break;
       case "explosion_lithium":
-        this.spawnExplosion(x, y, "#dc2626", "#f87171", 90);
-        this.spawnExplosion(x, y, "#fca5a5", "#ffffff", 55);
-        this.spawnRing(x, y, "#dc2626", 45);
-        this.flashes.push({ color: "rgba(220,38,38,0.12)", alpha: 0.3, decay: 0.025 });
+        this.spawnExplosion(x, y, "#dc2626", "#f87171", 220);
+        this.spawnExplosion(x, y, "#fca5a5", "#ffffff", 140);
+        this.spawnExplosion(x, y, "#b91c1c", "#dc2626", 90);
+        this.spawnRing(x, y, "#dc2626", 100);
+        this.spawnRing(x, y, "#f87171", 55);
+        this.flashes.push({ color: "rgba(220,38,38,0.25)", alpha: 0.5, decay: 0.015 });
         break;
       case "explosion_sodium":
-        this.spawnExplosion(x, y, "#eab308", "#fbbf24", 110);
-        this.spawnExplosion(x, y, "#fde047", "#ffffff", 70);
-        this.spawnRing(x, y, "#eab308", 55);
-        this.flashes.push({ color: "rgba(234,179,8,0.2)", alpha: 0.45, decay: 0.02 });
+        this.spawnExplosion(x, y, "#eab308", "#fbbf24", 250);
+        this.spawnExplosion(x, y, "#fde047", "#ffffff", 160);
+        this.spawnExplosion(x, y, "#ca8a04", "#eab308", 100);
+        this.spawnRing(x, y, "#eab308", 110);
+        this.spawnRing(x, y, "#fde047", 60);
+        this.flashes.push({ color: "rgba(234,179,8,0.35)", alpha: 0.6, decay: 0.012 });
         break;
       case "explosion_potassium":
-        this.spawnExplosion(x, y, "#a855f7", "#c084fc", 120);
-        this.spawnExplosion(x, y, "#e9d5ff", "#ffffff", 75);
-        this.spawnRing(x, y, "#a855f7", 60);
-        this.flashes.push({ color: "rgba(168,85,247,0.15)", alpha: 0.4, decay: 0.02 });
+        this.spawnExplosion(x, y, "#a855f7", "#c084fc", 260);
+        this.spawnExplosion(x, y, "#e9d5ff", "#ffffff", 170);
+        this.spawnExplosion(x, y, "#7c3aed", "#a855f7", 110);
+        this.spawnRing(x, y, "#a855f7", 120);
+        this.spawnRing(x, y, "#c084fc", 65);
+        this.flashes.push({ color: "rgba(168,85,247,0.3)", alpha: 0.55, decay: 0.012 });
         break;
       case "explosion_rubidium":
-        this.spawnExplosion(x, y, "#dc2626", "#f87171", 130);
-        this.spawnExplosion(x, y, "#fbbf24", "#fef08a", 80);
-        this.spawnRing(x, y, "#ef4444", 65);
-        this.flashes.push({ color: "rgba(220,38,38,0.15)", alpha: 0.4, decay: 0.02 });
+        this.spawnExplosion(x, y, "#dc2626", "#f87171", 280);
+        this.spawnExplosion(x, y, "#fbbf24", "#fef08a", 180);
+        this.spawnExplosion(x, y, "#ef4444", "#fb923c", 120);
+        this.spawnRing(x, y, "#ef4444", 130);
+        this.spawnRing(x, y, "#fbbf24", 70);
+        this.flashes.push({ color: "rgba(220,38,38,0.3)", alpha: 0.6, decay: 0.01 });
         break;
       case "explosion_cesium":
-        this.spawnExplosion(x, y, "#2563eb", "#60a5fa", 140);
-        this.spawnExplosion(x, y, "#93c5fd", "#ffffff", 90);
-        this.spawnRing(x, y, "#3b82f6", 70);
-        this.flashes.push({ color: "rgba(37,99,235,0.2)", alpha: 0.5, decay: 0.018 });
+        this.spawnExplosion(x, y, "#2563eb", "#60a5fa", 300);
+        this.spawnExplosion(x, y, "#93c5fd", "#ffffff", 200);
+        this.spawnExplosion(x, y, "#1d4ed8", "#3b82f6", 130);
+        this.spawnRing(x, y, "#3b82f6", 140);
+        this.spawnRing(x, y, "#60a5fa", 75);
+        this.flashes.push({ color: "rgba(37,99,235,0.35)", alpha: 0.65, decay: 0.01 });
         break;
       case "paddle_grow":
         this.spawnSparks(x, y, 10, "#4ade80");
