@@ -90,6 +90,16 @@ export function executeEffect(effectName: string, block: BlockRuntime, state: Ga
   if (fn) fn(block, state);
 }
 
+/** Replace existing timed effect with same key (no revert of old one) */
+function pushTimedEffect(state: GameState, effect: { key: string; endTime: number; revert: () => void }) {
+  for (let i = state.timedEffects.length - 1; i >= 0; i--) {
+    if (state.timedEffects[i].key === effect.key) {
+      state.timedEffects.splice(i, 1); // remove old, don't revert
+    }
+  }
+  state.timedEffects.push(effect);
+}
+
 // ────────────────────────────────────────────────────────────
 //  ATTACK — ball buff effects (no area damage)
 // ────────────────────────────────────────────────────────────
@@ -131,7 +141,7 @@ register("ball_power", (block, state) => {
   state.ball.powerHit = true;
   state.ball.powerHitEnd = state.now + dur;
   state.spawnVfx("explosion_orange", block.x, block.y, { radius: 25 });
-  state.timedEffects.push({
+  pushTimedEffect(state, {
     key: "ball_power",
     endTime: state.now + dur,
     revert: () => { state.ball.powerHit = false; },
@@ -143,7 +153,7 @@ register("ball_speed", (block, state) => {
   const dur = block.params.duration ?? 2500;
   state.ball.speed = state.ball.baseSpeed * 1.3;
   state.spawnVfx("fast_explosion", block.x, block.y, { radius: 20 });
-  state.timedEffects.push({
+  pushTimedEffect(state, {
     key: "ball_speed",
     endTime: state.now + dur,
     revert: () => { state.ball.speed = state.ball.baseSpeed; },
@@ -198,7 +208,7 @@ register("heavy_block", (block, state) => {
   const reduction = block.params.speedReduction ?? 0.7;
   state.ball.speed = state.ball.baseSpeed * reduction;
   state.spawnVfx("heavy_impact", block.x, block.y);
-  state.timedEffects.push({
+  pushTimedEffect(state, {
     key: "heavy_block",
     endTime: state.now + 2000,
     revert: () => { state.ball.speed = state.ball.baseSpeed; },
@@ -226,7 +236,7 @@ register("slow_control", (block, state) => {
   const dur = block.params.duration ?? 1500;
   state.ball.speed = state.ball.baseSpeed * mult;
   state.spawnVfx("slow_blue", block.x, block.y);
-  state.timedEffects.push({
+  pushTimedEffect(state, {
     key: "slow_control",
     endTime: state.now + dur,
     revert: () => { state.ball.speed = state.ball.baseSpeed; },
@@ -238,7 +248,7 @@ register("ball_powerup", (block, state) => {
   const dur = block.params.duration ?? 2500;
   state.ball.radius = state.ball.baseRadius * sizeMult;
   state.spawnVfx("powerup_gold", block.x, block.y);
-  state.timedEffects.push({
+  pushTimedEffect(state, {
     key: "ball_powerup",
     endTime: state.now + dur,
     revert: () => { state.ball.radius = state.ball.baseRadius; },
@@ -271,7 +281,7 @@ register("state_change", (block, state) => {
   const dur = block.params.duration ?? 2000;
   state.ball.speed = state.ball.baseSpeed * 1.1;
   state.spawnVfx("none", block.x, block.y);
-  state.timedEffects.push({
+  pushTimedEffect(state, {
     key: "state_change",
     endTime: state.now + dur,
     revert: () => { state.ball.speed = state.ball.baseSpeed; },
@@ -284,7 +294,7 @@ register("paddle_grow", (block, state) => {
   const dur = block.params.duration ?? 4000;
   state.paddle.width = state.paddle.baseWidth * scale;
   state.spawnVfx("paddle_grow", block.x, block.y);
-  state.timedEffects.push({
+  pushTimedEffect(state, {
     key: "paddle_grow",
     endTime: state.now + dur,
     revert: () => { state.paddle.width = state.paddle.baseWidth; },
@@ -296,7 +306,7 @@ register("conduct", (block, state) => {
   const dur = block.params.duration ?? 2000;
   state.ball.radius = state.ball.baseRadius * 1.2;
   state.spawnVfx("conduct_pulse", block.x, block.y);
-  state.timedEffects.push({
+  pushTimedEffect(state, {
     key: "conduct",
     endTime: state.now + dur,
     revert: () => { state.ball.radius = state.ball.baseRadius; },
@@ -309,7 +319,7 @@ register("rare_support", (block, state) => {
   state.addScore(bonus);
   state.ball.radius = state.ball.baseRadius * 1.15;
   state.spawnVfx("rare_sparkle", block.x, block.y, { bonus });
-  state.timedEffects.push({
+  pushTimedEffect(state, {
     key: "rare_support",
     endTime: state.now + dur,
     revert: () => { state.ball.radius = state.ball.baseRadius; },
@@ -325,7 +335,7 @@ register("slippery", (block, state) => {
   state.ball.vy = state.ball.vx * sin + state.ball.vy * cos;
   state.ball.speed = state.ball.baseSpeed * 0.9;
   state.spawnVfx("none", block.x, block.y);
-  state.timedEffects.push({
+  pushTimedEffect(state, {
     key: "slippery",
     endTime: state.now + dur,
     revert: () => { state.ball.speed = state.ball.baseSpeed; },
@@ -341,7 +351,7 @@ register("corrosion", (block, state) => {
   const dur = block.params.duration ?? 3000;
   state.paddle.width = state.paddle.baseWidth * 0.85;
   state.spawnVfx("corrosion_green", block.x, block.y);
-  state.timedEffects.push({
+  pushTimedEffect(state, {
     key: "corrosion",
     endTime: state.now + dur,
     revert: () => { state.paddle.width = state.paddle.baseWidth; },
@@ -356,7 +366,7 @@ register("gas_zone", (block, state) => {
   state.gasZoneHeight = height;
   state.paddle.speedMultiplier = speedMult;
   state.spawnVfx("gas_yellow", block.x, block.y, { height, duration: dur });
-  state.timedEffects.push({
+  pushTimedEffect(state, {
     key: "gas_zone",
     endTime: state.now + dur,
     revert: () => { state.paddle.speedMultiplier = 1; state.gasZoneEnd = 0; },
@@ -368,7 +378,7 @@ register("paddle_debuff", (block, state) => {
   const dur = block.params.duration ?? 3000;
   state.paddle.width = state.paddle.baseWidth * scale;
   state.spawnVfx("paddle_shrink", block.x, block.y);
-  state.timedEffects.push({
+  pushTimedEffect(state, {
     key: "paddle_debuff",
     endTime: state.now + dur,
     revert: () => { state.paddle.width = state.paddle.baseWidth; },
@@ -384,7 +394,7 @@ register("freeze_score", (block, state) => {
   const dur = block.params.duration ?? 3000;
   state.spawnVfx("freeze_ice", block.x, block.y);
   state.scoreMultiplier = mult;
-  state.timedEffects.push({
+  pushTimedEffect(state, {
     key: "freeze_score",
     endTime: state.now + dur,
     revert: () => { state.scoreMultiplier = 1; },

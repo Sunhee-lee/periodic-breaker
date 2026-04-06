@@ -41,7 +41,7 @@ type LevelTheme = { hueShift: number; tintR: number; tintG: number; tintB: numbe
 const LEVEL_THEMES: LevelTheme[] = [
   { hueShift: 0, tintR: 0, tintG: 0, tintB: 0 },        // L1: original colors
   { hueShift: 0, tintR: 60, tintG: -20, tintB: -30 },    // L2: red/warm tint
-  { hueShift: 0, tintR: -30, tintG: -10, tintB: 60 },    // L3: blue/ice tint
+  { hueShift: 0, tintR: -20, tintG: 20, tintB: 80 },     // L3: blue/white ice tint
 ];
 const COLS = 18;
 const BG = 1;
@@ -828,7 +828,7 @@ export default function Game() {
         const colors = {
           fill: tintColor(baseColors.fill, theme),
           glow: baseColors.glow,
-          text: tintColor(baseColors.text, theme),
+          text: "#ffffff",
           border: tintColor(baseColors.border, theme),
         };
         const bx = blk.x - BW / 2;
