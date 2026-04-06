@@ -272,7 +272,7 @@ export default function Game() {
     setTimeLeft(LEVEL_TIMES[levelRef.current - 1]);
     setGameOver(false);
     setStageClear(false);
-    setShowCollection(false);
+
     setBlocksLeft(DESTROYABLE_COUNT);
     setScore(0);
     setLives(LIVES);
@@ -324,7 +324,7 @@ export default function Game() {
     setLevel(newLv);
     setTimeLeft(LEVEL_TIMES[newLv - 1]);
     setStageClear(false);
-    setShowCollection(false);
+
     setBlocksLeft(DESTROYABLE_COUNT);
     // Restart physics runner if stopped
     if (runnerRef.current && engineRef.current) Matter.Runner.run(runnerRef.current, engineRef.current);
