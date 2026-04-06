@@ -247,9 +247,9 @@ const OVERRIDES: Record<number, PartialOverride> = {
 
   // ── UTILITY ──
   2:  { group: "utility",  effect: "ball_powerup",     vfx: "powerup_gold",    params: { sizeMultiplier: 3, duration: 30000 } }, // He — 헬륨풍선 3배 30초
-  22: { group: "utility",  effect: "paddle_grow",      vfx: "paddle_grow",     durability: 2, params: { scale: 1.3, duration: 10000 } },  // Ti
-  26: { group: "utility",  effect: "paddle_grow",      vfx: "paddle_grow",     durability: 2, params: { scale: 1.35, duration: 10000 } }, // Fe
-  29: { group: "utility",  effect: "paddle_grow",      vfx: "paddle_grow",     rarity: "rare", params: { scale: 1.3, duration: 10000 } }, // Cu
+  22: { group: "utility",  effect: "paddle_grow",      vfx: "paddle_grow",     durability: 2, params: { scale: 1.3, duration: 10000 } },  // Ti — 안정적 컨트롤형
+  26: { group: "defense",  effect: "heavy_ball",       vfx: "heavy_impact",    durability: 2, params: { slowMultiplier: 0.85, duration: 4000 } }, // Fe — 무게감 물리형
+  29: { group: "utility",  effect: "paddle_grow",      vfx: "paddle_grow",     rarity: "rare", params: { scale: 1.25, duration: 8000 } }, // Cu — 연쇄 반응형 (짧지만 민첩)
   5:  { group: "utility",  effect: "slow_control",     vfx: "slow_blue",       params: { slowMultiplier: 0.75, duration: 1500 } },
   8:  { group: "utility",  effect: "ball_powerup",     vfx: "powerup_gold",    params: { sizeMultiplier: 1.3, duration: 2500 } },
   10: { group: "defense",  effect: "floor_shield",      vfx: "shield_blue",     params: { duration: 20000 } }, // Ne — 20초 바닥 네온바
@@ -264,9 +264,9 @@ const OVERRIDES: Record<number, PartialOverride> = {
   17: { group: "debuff", effect: "paddle_debuff", vfx: "paddle_shrink",   params: { scale: 0.8, duration: 3000 } },
 
   // ── SCORE ──
-  7:  { group: "score", effect: "freeze_score", vfx: "freeze_ice",  params: { multiplier: 1.5, duration: 3000 } },
-  12: { group: "score", effect: "flash_bonus",  vfx: "flash_white", params: { bonus: 500 } },  // Mg — 섬광 점수 보너스
-  79: { group: "score", effect: "flash_bonus",  vfx: "flash_white", rarity: "legendary", params: { bonus: 2000 } },
+  7:  { group: "utility", effect: "slow_field",      vfx: "freeze_ice",  params: { slowMultiplier: 0.6, duration: 2000 } }, // N — 냉각 속도 제어
+  12: { group: "score",   effect: "flash_bonus",     vfx: "flash_white", params: { bonus: 500 } },  // Mg — 섬광 점수 보너스
+  79: { group: "score",   effect: "score_multiplier", vfx: "flash_white", rarity: "legendary", params: { multiplier: 2.0, duration: 5000 } }, // Au — 5초간 점수 2배
 
   // Ca — alkaline earth defense
   20: { group: "defense", effect: "shard_splash", vfx: "shard_splash", durability: 2, rarity: "uncommon", params: { shardCount: 6, range: 40 } },
