@@ -1232,15 +1232,19 @@ export default function Game() {
                 <p className="text-sm text-zinc-400 mb-1">Score: <span className="text-indigo-400 font-bold">{score}</span></p>
                 <p className="text-xs text-zinc-500 mb-2">이번 레벨 발견: {levelCollected.size}개 | 전체: {collected.size}/118</p>
                 {/* This level's collection grid */}
-                <div className="grid grid-cols-9 gap-0.5 mb-3 w-full max-w-[360px]">
-                  {ELEMENTS.map((el) => {
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(18, 1fr)", gap: "1px" }} className="mb-3 w-full">
+                  {Array.from({ length: 9 * 18 }, (_, i) => {
+                    const r = Math.floor(i / 18) + 1, c = (i % 18) + 1;
+                    const el = ELEMENTS.find(e => e.row === r && e.col === c);
+                    if (!el) return <div key={i} />;
                     const found = levelCollected.has(el.atomicNumber);
                     const clr = GROUP_COLORS[el.group];
                     return (
                       <div key={el.atomicNumber}
-                        className={`flex items-center justify-center rounded ${found ? "" : "opacity-15"}`}
-                        style={{ background: found ? clr.fill : "#27272a", height: "20px", fontSize: "8px", color: found ? clr.text : "#555" }}>
-                        {el.symbol}
+                        className={`flex flex-col items-center justify-center rounded ${found ? "" : "opacity-15"}`}
+                        style={{ background: found ? clr.fill : "#27272a", aspectRatio: "1", padding: "1px" }}>
+                        <span style={{ fontSize: "4px", color: found ? "rgba(255,255,255,0.5)" : "#555", lineHeight: 1 }}>{el.atomicNumber}</span>
+                        <span style={{ fontSize: "6px", fontWeight: 700, color: found ? "#fff" : "#555", lineHeight: 1 }}>{el.symbol}</span>
                       </div>
                     );
                   })}
@@ -1266,15 +1270,19 @@ export default function Game() {
                 <p className="text-sm text-zinc-400 mb-1">Level {level} | Score: <span className="text-indigo-400 font-bold">{score}</span></p>
                 <p className="text-xs text-zinc-500 mb-2">이번 레벨 발견: {levelCollected.size}개 | 전체: {collected.size}/118</p>
                 {/* This level's collection grid */}
-                <div className="grid grid-cols-9 gap-0.5 mb-3 w-full max-w-[360px]">
-                  {ELEMENTS.map((el) => {
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(18, 1fr)", gap: "1px" }} className="mb-3 w-full">
+                  {Array.from({ length: 9 * 18 }, (_, i) => {
+                    const r = Math.floor(i / 18) + 1, c = (i % 18) + 1;
+                    const el = ELEMENTS.find(e => e.row === r && e.col === c);
+                    if (!el) return <div key={i} />;
                     const found = levelCollected.has(el.atomicNumber);
                     const clr = GROUP_COLORS[el.group];
                     return (
                       <div key={el.atomicNumber}
-                        className={`flex items-center justify-center rounded ${found ? "" : "opacity-15"}`}
-                        style={{ background: found ? clr.fill : "#27272a", height: "20px", fontSize: "8px", color: found ? clr.text : "#555" }}>
-                        {el.symbol}
+                        className={`flex flex-col items-center justify-center rounded ${found ? "" : "opacity-15"}`}
+                        style={{ background: found ? clr.fill : "#27272a", aspectRatio: "1", padding: "1px" }}>
+                        <span style={{ fontSize: "4px", color: found ? "rgba(255,255,255,0.5)" : "#555", lineHeight: 1 }}>{el.atomicNumber}</span>
+                        <span style={{ fontSize: "6px", fontWeight: 700, color: found ? "#fff" : "#555", lineHeight: 1 }}>{el.symbol}</span>
                       </div>
                     );
                   })}
