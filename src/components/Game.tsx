@@ -1172,7 +1172,7 @@ export default function Game() {
   // Full ranking screen
   if (showFullRanking) {
     return (
-      <div className="flex flex-col items-center min-h-screen gap-4 select-none px-4 py-6">
+      <div className="flex flex-col items-center min-h-[100dvh] gap-4 select-none px-4 py-6">
         <h2 className="text-xl font-bold text-zinc-200">🏆 랭킹</h2>
         {/* Ranking list */}
         <div className="w-full max-w-[320px] max-h-[60vh] overflow-y-auto">
@@ -1204,12 +1204,12 @@ export default function Game() {
   if (!difficulty) {
     const bestScore = homeTop3[0]?.score;
     return (
-      <div className="relative flex flex-col items-center justify-end min-h-screen w-full select-none"
+      <div className="relative flex flex-col items-center justify-end w-full select-none" style={{ minHeight: "100dvh" }}
         style={{ backgroundImage: "url('/Title_image.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
 
 
         {/* UI overlay — bottom section */}
-        <div className="relative z-10 flex flex-col items-center gap-3 pb-8 px-4 w-full max-w-[400px]">
+        <div className="relative z-10 flex flex-col items-center gap-3 px-4 w-full max-w-[400px]" style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
 
           {/* GAME START label */}
           <div className="flex items-center gap-2">
@@ -1266,7 +1266,7 @@ export default function Game() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-2 sm:gap-3 select-none py-2 sm:py-4 px-1 w-full max-w-[560px] mx-auto min-h-screen bg-black">
+    <div className="flex flex-col items-center gap-2 sm:gap-3 select-none py-2 sm:py-4 px-1 w-full max-w-[560px] mx-auto min-h-[100dvh] bg-black">
       {/* Title */}
       <h1 className="text-xl sm:text-3xl font-bold tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: "'Bungee', cursive" }}>
         Element Breaker
