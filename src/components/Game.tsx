@@ -1217,8 +1217,8 @@ export default function Game() {
   if (!difficulty) {
     const bestScore = homeTop3[0]?.score;
     return (
-      <div className="relative flex flex-col items-center justify-end w-full select-none" style={{ minHeight: "100dvh" }}
-        style={{ backgroundImage: "url('/Title_image.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
+      <div className="relative flex flex-col items-center justify-end w-full select-none"
+        style={{ minHeight: "100dvh", backgroundImage: "url('/Title_image.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
 
 
         {/* UI overlay — bottom section */}
