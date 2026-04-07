@@ -1208,50 +1208,54 @@ export default function Game() {
 
   // If no difficulty selected, show home screen
   if (!difficulty) {
+    const modeLabel = homeTab.charAt(0).toUpperCase() + homeTab.slice(1);
+    const modeColor = homeTab === "easy" ? "#22c55e" : homeTab === "normal" ? "#3b82f6" : "#ef4444";
+    const bestScore = homeTop3[0]?.score;
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-5 select-none px-4">
-        <h1 className="text-2xl sm:text-4xl font-bold tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: "'Inter', sans-serif" }}>
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 select-none px-4">
+        {/* Title — slightly smaller */}
+        <h1 className="text-xl sm:text-3xl font-bold tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: "'Inter', sans-serif" }}>
           Element Breaker
         </h1>
-        <p className="text-zinc-400 text-sm">난이도를 선택하세요</p>
-        {/* Mode select + TOP 3 preview */}
-        <div className="flex gap-2 mb-1">
+
+        {/* START button — biggest, most prominent */}
+        <button onClick={() => startWithDifficulty(homeTab)}
+          className="w-full max-w-[300px] py-5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-2xl transition-all"
+          style={{ animation: "pulse-glow 2s ease-in-out infinite" }}>
+          시작
+          <p className="text-xs font-normal opacity-70 mt-1">현재: {modeLabel}</p>
+        </button>
+
+        {/* Mode select */}
+        <div className="flex gap-2">
           {([["easy","Easy","#22c55e"],["normal","Normal","#3b82f6"],["hard","Hard","#ef4444"]] as const).map(([k,l,c]) => (
             <button key={k} onClick={async () => { setHomeTab(k); const r = await getTopRanks(k, 3); setHomeTop3(r); }}
-              className={`px-4 py-2 text-sm rounded-lg border transition-colors ${homeTab === k ? "border-zinc-400 bg-zinc-800" : "border-zinc-700 bg-zinc-900 hover:bg-zinc-800"}`}>
-              <span style={{ color: c }}>{l}</span>
+              className={`px-5 py-2 text-sm rounded-lg transition-all ${homeTab === k
+                ? "border-2 bg-zinc-800 shadow-lg"
+                : "border border-zinc-700 bg-zinc-900 opacity-50 hover:opacity-80"}`}
+              style={homeTab === k ? { borderColor: c } : {}}>
+              <span style={{ color: c, fontWeight: homeTab === k ? 700 : 400 }}>{l}</span>
             </button>
           ))}
         </div>
-        {/* TOP 3 */}
-        <div className="w-full max-w-[280px]">
-          <div className="bg-zinc-900 rounded-lg border border-zinc-700 overflow-hidden">
-            {homeTop3.length === 0 && <p className="text-[10px] text-zinc-500 text-center py-2">기록 없음</p>}
-            {homeTop3.map((r, i) => (
-              <div key={i} className={`flex items-center justify-between px-3 py-1.5 text-xs ${i === 0 ? "bg-yellow-900/30" : i === 1 ? "bg-zinc-800/50" : i === 2 ? "bg-orange-900/20" : ""}`}>
-                <div className="flex items-center gap-2">
-                  <span className="w-5 text-center">{i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉"}</span>
-                  <span className="text-zinc-200">{r.player_name}</span>
-                </div>
-                <span className="font-mono font-bold text-indigo-400">{r.score.toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
+
+        {/* BEST score */}
+        <div className="text-center">
+          <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Best ({modeLabel})</p>
+          <p className="text-lg font-mono font-bold" style={{ color: modeColor }}>
+            {bestScore != null ? bestScore.toLocaleString() : "---"}
+          </p>
         </div>
-        {/* Start button */}
-        <button onClick={() => startWithDifficulty(homeTab)}
-          className="w-full max-w-[280px] py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg transition-colors">
-          {homeTab.charAt(0).toUpperCase() + homeTab.slice(1)} 시작
-        </button>
-        {/* Full ranking link */}
+
+        {/* Ranking link — small, bottom */}
         <button onClick={async () => {
           setRankingTab(homeTab);
           const r = await getTopRanks(homeTab, 50);
           setRankings(r);
           setShowFullRanking(true);
         }}
-          className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors">
-          🏆 전체 랭킹 보기
+          className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors mt-2">
+          🏆 랭킹 보기
         </button>
       </div>
     );
@@ -1293,12 +1297,16 @@ export default function Game() {
         <div className="flex items-center justify-between w-full px-1 mb-1 text-xs">
           <div className="flex items-center gap-1">
             <button onClick={() => { stopBGM(); restartGame(); setDifficulty(null); }}
-              className="w-7 h-7 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400 text-sm">
-              ←
+              className="w-7 h-7 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </button>
             <button onClick={() => setShowVolume(!showVolume)}
-              className="w-7 h-7 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400 text-sm">
-              {bgmVol > 0 ? "♪" : "✕"}
+              className="w-7 h-7 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400">
+              {bgmVol > 0 ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+              )}
             </button>
             {showVolume && (
               <input type="range" min="0" max="100" value={Math.round(bgmVol * 100)}
