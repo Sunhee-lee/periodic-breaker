@@ -1303,7 +1303,7 @@ export default function Game() {
       </div>
 
       {/* Control bar — above canvas */}
-      {launched && !paused && (
+      {launched && (
         <div className="flex items-center justify-between w-full px-1 mb-1 text-xs">
           <div className="flex items-center gap-1">
             <button onClick={() => { stopBGM(); restartGame(); setDifficulty(null); }}
