@@ -27,3 +27,8 @@ body {
   0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(99,102,241,0.3); }
   50% { transform: scale(1.03); box-shadow: 0 0 40px rgba(99,102,241,0.5); }
 }
+
+@keyframes pulse-glow-orange {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(245,158,11,0.4), inset 0 1px 0 rgba(255,255,255,0.2); }
+  50% { transform: scale(1.03); box-shadow: 0 0 40px rgba(245,158,11,0.6), inset 0 1px 0 rgba(255,255,255,0.3); }
+}
