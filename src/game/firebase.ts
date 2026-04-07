@@ -22,17 +22,19 @@ const db = getDatabase(app);
 export interface RankEntry {
   player_name: string;
   score: number;
+  level: number;
   mode: string;
   timestamp: number;
 }
 
 /** Save a score to mode-specific ranking */
-export async function saveRank(mode: string, name: string, score: number): Promise<void> {
+export async function saveRank(mode: string, name: string, score: number, level: number): Promise<void> {
   try {
     const rankRef = ref(db, `ranking_${mode}`);
     await push(rankRef, {
       player_name: name,
       score,
+      level,
       mode,
       timestamp: Date.now(),
     });

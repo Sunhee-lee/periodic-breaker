@@ -1184,7 +1184,10 @@ export default function Game() {
                   <span className="w-5 text-center">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : <span className="text-zinc-500 font-bold">{i + 1}</span>}</span>
                   <span className="text-zinc-200">{r.player_name}</span>
                 </div>
-                <span className="font-mono font-bold text-indigo-400">{r.score.toLocaleString()}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-zinc-500 text-[10px]">Lv.{r.level ?? 1}</span>
+                  <span className="font-mono font-bold text-indigo-400">{r.score.toLocaleString()}</span>
+                </div>
               </div>
             ))}
           </div>
@@ -1203,8 +1206,7 @@ export default function Game() {
     return (
       <div className="relative flex flex-col items-center justify-end min-h-screen w-full select-none"
         style={{ backgroundImage: "url('/Title_image.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
-        {/* Dark gradient overlay — stronger at bottom for UI readability */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.85) 100%)" }} />
+
 
         {/* UI overlay — bottom section */}
         <div className="relative z-10 flex flex-col items-center gap-3 pb-8 px-4 w-full max-w-[400px]">
@@ -1437,7 +1439,7 @@ export default function Game() {
                         className="px-2 py-1 text-sm bg-zinc-800 border border-zinc-600 rounded text-zinc-200 w-28 text-center" />
                       <button onClick={async () => {
                         if (!playerName.trim() || playerName.trim().length < 1) return;
-                        await saveRank("normal", playerName.trim(), score);
+                        await saveRank("normal", playerName.trim(), score, level);
                         await new Promise(res => setTimeout(res, 500));
                         const r = await getTopRanks("normal", 50);
                         setRankings(r);
@@ -1461,7 +1463,10 @@ export default function Game() {
                             <span className="w-4 text-center">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : <span className="text-zinc-500 font-bold">{i + 1}</span>}</span>
                             <span className="text-zinc-200">{r.player_name}</span>
                           </div>
-                          <span className="font-mono font-bold text-indigo-400">{r.score.toLocaleString()}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-zinc-500">Lv.{r.level ?? 1}</span>
+                            <span className="font-mono font-bold text-indigo-400">{r.score.toLocaleString()}</span>
+                          </div>
                         </div>
                       ))}
                     </div>
