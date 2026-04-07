@@ -1182,20 +1182,27 @@ export default function Game() {
         <h2 className="text-xl font-bold text-zinc-200">🏆 랭킹</h2>
         {/* Ranking list */}
         <div className="w-full max-w-[320px] max-h-[60vh] overflow-y-auto">
+          {/* Header */}
+          <div className="w-full flex items-center justify-between px-3 py-1 text-[10px] text-zinc-500 border-b border-zinc-700">
+            <div className="flex items-center gap-2"><span className="w-5" /><span>이름</span></div>
+            <div className="flex items-center gap-3"><span>레벨</span><span>점수</span></div>
+          </div>
           <div className="bg-zinc-900 rounded-lg border border-zinc-700 overflow-hidden">
-            {rankings.length === 0 && <p className="text-xs text-zinc-500 text-center py-3">랭킹 데이터 없음</p>}
-            {rankings.map((r, i) => (
-              <div key={i} className={`flex items-center justify-between px-3 py-1.5 text-xs ${i === 0 ? "bg-yellow-900/30" : i === 1 ? "bg-zinc-800/50" : i === 2 ? "bg-orange-900/20" : ""}`}>
-                <div className="flex items-center gap-2">
-                  <span className="w-5 text-center">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : <span className="text-zinc-500 font-bold">{i + 1}</span>}</span>
-                  <span className="text-zinc-200">{r.player_name}</span>
+            {Array.from({ length: Math.max(10, rankings.length) }, (_, i) => {
+              const r = rankings[i];
+              return (
+                <div key={i} className={`flex items-center justify-between px-3 py-1.5 text-xs ${i === 0 ? "bg-yellow-900/30" : i === 1 ? "bg-zinc-800/50" : i === 2 ? "bg-orange-900/20" : ""}`}>
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 text-center">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : <span className="text-zinc-500 font-bold">{i + 1}</span>}</span>
+                    <span className="text-zinc-200">{r ? r.player_name : "---"}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-zinc-500 text-[10px]">{r ? `Lv.${r.level ?? 1}` : ""}</span>
+                    <span className="font-mono font-bold text-indigo-400">{r ? r.score.toLocaleString() : "---"}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-zinc-500 text-[10px]">Lv.{r.level ?? 1}</span>
-                  <span className="font-mono font-bold text-indigo-400">{r.score.toLocaleString()}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
         <button onClick={() => setShowFullRanking(false)}
@@ -1215,7 +1222,7 @@ export default function Game() {
 
 
         {/* UI overlay — bottom section */}
-        <div className="relative z-10 flex flex-col items-center gap-3 px-4 w-full max-w-[400px]" style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
+        <div className="relative z-10 flex flex-col items-center gap-3 px-4 w-full max-w-[400px]" style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}>
 
           {/* GAME START label */}
           <div className="flex items-center gap-2">
