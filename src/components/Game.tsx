@@ -35,15 +35,17 @@ const MULTIBALL_ELEMENTS = new Set([118, 117, 116]); // Og, Ts, Lv
 const BASE_SPEED = 6;
 
 // Level configs
-const LEVEL_TIMES = [420, 300, 180]; // L1: 7min, L2: 5min, L3: 3min
-const LEVEL_SPEED = [BASE_SPEED, BASE_SPEED * 1.2, BASE_SPEED * 1.5]; // L1, L2, L3
-// Level color themes: [hue-shift in degrees, saturation-boost, brightness-boost]
-// L1: original, L2: red/warm shift, L3: blue/ice shift
+const LEVEL_TIMES = [420, 300, 180, 180, 180]; // L1:7m L2:5m L3-5:3m
+const LEVEL_SPEED = [BASE_SPEED, BASE_SPEED * 1.2, BASE_SPEED * 1.5, BASE_SPEED * 1.7, BASE_SPEED * 1.7];
+const LEVEL_PADDLE = [PADDLE_W, PADDLE_W, PADDLE_W, PADDLE_W * 0.8, PADDLE_W * 0.65]; // L4: 80px, L5: 65px
+// Level color themes
 type LevelTheme = { hueShift: number; tintR: number; tintG: number; tintB: number };
 const LEVEL_THEMES: LevelTheme[] = [
   { hueShift: 0, tintR: 0, tintG: 0, tintB: 0 },        // L1: original colors
   { hueShift: 0, tintR: 60, tintG: -20, tintB: -30 },    // L2: red/warm tint
   { hueShift: 0, tintR: -20, tintG: 20, tintB: 80 },     // L3: blue/white ice tint
+  { hueShift: 0, tintR: 40, tintG: -10, tintB: 50 },     // L4: purple tint
+  { hueShift: 0, tintR: 50, tintG: 40, tintB: -30 },     // L5: yellow/gold tint
 ];
 const COLS = 18;
 const BG = 1;
@@ -294,7 +296,7 @@ export default function Game() {
     const engine = engineRef.current;
     if (!engine) return;
     const newLv = levelRef.current + 1;
-    if (newLv > 3) return; // max level 3
+    if (newLv > 5) return; // max level 5
     // Remove old blocks
     for (const b of blocksRef.current) {
       const body = (b as BlockRuntime & { body: Matter.Body }).body;
@@ -323,11 +325,15 @@ export default function Game() {
     levelCollectedRef.current = new Set();
     vfxRef.current.clear();
     floatingTextsRef.current = [];
+    const lvPW = LEVEL_PADDLE[newLv - 1] ?? PADDLE_W;
+    paddleWRef.current = lvPW;
     if (stateRef.current) {
       stateRef.current.ball.speed = LEVEL_SPEED[newLv - 1] ?? BASE_SPEED;
       stateRef.current.ball.baseSpeed = LEVEL_SPEED[newLv - 1] ?? BASE_SPEED;
       stateRef.current.ball.pierce = false;
       stateRef.current.ball.radius = BALL_R;
+      stateRef.current.paddle.width = lvPW;
+      stateRef.current.paddle.baseWidth = lvPW;
       stateRef.current.stageClear = false;
     }
     setLevel(newLv);
@@ -1389,7 +1395,7 @@ export default function Game() {
                     );
                   })}
                 </div>
-                {level < 3 ? (
+                {level < 5 ? (
                   <button onClick={nextLevel}
                     className="px-5 py-2 text-sm sm:text-base bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-colors shadow-[0_0_20px_rgba(16,185,129,0.3)] mb-2">
                     Level {level + 1} 시작
