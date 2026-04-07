@@ -355,7 +355,7 @@ export default function Game() {
 
   // Load rankings on mount and when returning to home
   useEffect(() => {
-    getTopRanks(10).then(setRankings).catch(() => {});
+    getTopRanks(50).then(setRankings).catch(() => {});
   }, [difficulty]);
 
   // Keyboard: Escape or P to toggle pause
@@ -1167,7 +1167,7 @@ export default function Game() {
         {/* Ranking button + panel */}
         <button onClick={async () => {
           if (!showRanking) {
-            const r = await getTopRanks(10);
+            const r = await getTopRanks(50);
             setRankings(r);
           }
           setShowRanking(!showRanking);
@@ -1338,24 +1338,26 @@ export default function Game() {
                 <p className="text-3xl sm:text-4xl font-bold text-red-400 mb-2">{timeLeft <= 0 ? "TIME UP!" : "GAME OVER"}</p>
                 <p className="text-sm text-zinc-400 mb-1">Level {level} | Score: <span className="text-indigo-400 font-bold">{score}</span></p>
                 <p className="text-xs text-zinc-500 mb-2">이번 레벨 발견: {levelCollected.size}개 | 전체: {collected.size}/118</p>
-                {/* This level's collection grid */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(18, 1fr)", gap: "1px" }} className="mb-3 w-full max-w-full overflow-hidden">
-                  {Array.from({ length: 9 * 18 }, (_, i) => {
-                    const r = Math.floor(i / 18) + 1, c = (i % 18) + 1;
-                    const el = ELEMENTS.find(e => e.row === r && e.col === c);
-                    if (!el) return <div key={i} />;
-                    const found = levelCollected.has(el.atomicNumber);
-                    const clr = GROUP_COLORS[el.group];
-                    return (
-                      <div key={el.atomicNumber}
-                        className={`flex flex-col items-center justify-center rounded ${found ? "" : "opacity-15"}`}
-                        style={{ background: found ? clr.fill : "#27272a", aspectRatio: "1" }}>
-                        <span style={{ fontSize: "3px", color: found ? "rgba(255,255,255,0.5)" : "#555", lineHeight: 1 }}>{el.atomicNumber}</span>
-                        <span style={{ fontSize: "5px", fontWeight: 700, color: found ? "#fff" : "#555", lineHeight: 1 }}>{el.symbol}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                {/* Periodic table — only before ranking save */}
+                {!rankSaved && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(18, 1fr)", gap: "1px" }} className="mb-3 w-full max-w-full overflow-hidden">
+                    {Array.from({ length: 9 * 18 }, (_, i) => {
+                      const r = Math.floor(i / 18) + 1, c = (i % 18) + 1;
+                      const el = ELEMENTS.find(e => e.row === r && e.col === c);
+                      if (!el) return <div key={i} />;
+                      const found = levelCollected.has(el.atomicNumber);
+                      const clr = GROUP_COLORS[el.group];
+                      return (
+                        <div key={el.atomicNumber}
+                          className={`flex flex-col items-center justify-center rounded ${found ? "" : "opacity-15"}`}
+                          style={{ background: found ? clr.fill : "#27272a", aspectRatio: "1" }}>
+                          <span style={{ fontSize: "3px", color: found ? "rgba(255,255,255,0.5)" : "#555", lineHeight: 1 }}>{el.atomicNumber}</span>
+                          <span style={{ fontSize: "5px", fontWeight: 700, color: found ? "#fff" : "#555", lineHeight: 1 }}>{el.symbol}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
                 {/* Ranking save */}
                 {!rankSaved ? (
                   <div className="flex items-center gap-2 mb-2">
@@ -1367,7 +1369,7 @@ export default function Game() {
                       await saveRank({ name: playerName.trim(), score, level, discovered: collected.size });
                       // Small delay for Firebase to propagate
                       await new Promise(res => setTimeout(res, 500));
-                      const r = await getTopRanks(10);
+                      const r = await getTopRanks(50);
                       setRankings(r);
                       setRankSaved(true);
                     }}
