@@ -141,7 +141,10 @@ export default function Game() {
   const [playerName, setPlayerName] = useState("");
   const [rankSaved, setRankSaved] = useState(false);
   const [rankings, setRankings] = useState<RankEntry[]>([]);
-  const [showRanking, setShowRanking] = useState(false);
+  const [homeTab, setHomeTab] = useState("normal"); // mode for TOP 3 preview
+  const [homeTop3, setHomeTop3] = useState<RankEntry[]>([]);
+  const [showFullRanking, setShowFullRanking] = useState(false);
+  const [rankingTab, setRankingTab] = useState("normal");
   const [level, setLevel] = useState(1);
   const [timeLeft, setTimeLeft] = useState(LEVEL_TIMES[0]);
 
@@ -353,10 +356,17 @@ export default function Game() {
     }
   }, []);
 
-  // Load rankings on mount and when returning to home
+  // Load rankings for current difficulty
   useEffect(() => {
-    getTopRanks(50).then(setRankings).catch(() => {});
+    if (difficulty) {
+      getTopRanks(difficulty, 50).then(setRankings).catch(() => {});
+    }
   }, [difficulty]);
+
+  // Load home TOP 3 when homeTab changes
+  useEffect(() => {
+    getTopRanks(homeTab, 3).then(setHomeTop3).catch(() => {});
+  }, [homeTab]);
 
   // Keyboard: Escape or P to toggle pause
   useEffect(() => {
@@ -1159,55 +1169,90 @@ export default function Game() {
     }
   }, []);
 
-  // If no difficulty selected, show select screen
-  if (!difficulty) {
+  // Full ranking screen
+  if (showFullRanking) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-6 select-none px-4">
-        <h1 className="text-2xl sm:text-4xl font-bold tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: "'Inter', sans-serif" }}>
-          Element Breaker
-        </h1>
-        <p className="text-zinc-400 text-sm sm:text-base">난이도를 선택하세요</p>
-        <div className="flex flex-col gap-3 w-full max-w-[260px]">
-          {([["easy", "Easy", "#22c55e"],
-             ["normal", "Normal", "#3b82f6"],
-             ["hard", "Hard", "#ef4444"]] as const).map(([key, label, color]) => (
-            <button key={key} onClick={() => startWithDifficulty(key)}
-              className="py-4 rounded-lg border border-zinc-700 hover:border-zinc-500 bg-zinc-900 hover:bg-zinc-800 transition-colors"
-            >
-              <span className="font-bold text-lg" style={{ color }}>{label}</span>
+      <div className="flex flex-col items-center min-h-screen gap-4 select-none px-4 py-6">
+        <h2 className="text-xl font-bold text-zinc-200">🏆 랭킹</h2>
+        {/* Mode tabs */}
+        <div className="flex gap-2">
+          {([["easy","Easy","#22c55e"],["normal","Normal","#3b82f6"],["hard","Hard","#ef4444"]] as const).map(([k,l,c]) => (
+            <button key={k} onClick={async () => { setRankingTab(k); const r = await getTopRanks(k, 50); setRankings(r); }}
+              className={`px-4 py-1.5 text-sm rounded-lg border transition-colors ${rankingTab === k ? "border-zinc-400 bg-zinc-800" : "border-zinc-700 bg-zinc-900"}`}>
+              <span style={{ color: c }}>{l}</span>
             </button>
           ))}
         </div>
-        {/* Ranking button + panel */}
-        <button onClick={async () => {
-          if (!showRanking) {
-            const r = await getTopRanks(50);
-            setRankings(r);
-          }
-          setShowRanking(!showRanking);
-        }}
-          className="px-5 py-2 text-sm bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded-lg transition-colors">
-          🏆 랭킹 보기
-        </button>
-        {showRanking && (
-          <div className="w-full max-w-[300px] max-h-[50vh] overflow-y-auto">
-            <div className="bg-zinc-900 rounded-lg border border-zinc-700 overflow-hidden">
-              {rankings.length === 0 && <p className="text-xs text-zinc-500 text-center py-3">랭킹 데이터 없음</p>}
-              {rankings.map((r, i) => (
-                <div key={i} className={`flex items-center justify-between px-3 py-1.5 text-xs ${i === 0 ? "bg-yellow-900/30" : i === 1 ? "bg-zinc-800/50" : i === 2 ? "bg-orange-900/20" : ""}`}>
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 text-center">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : <span className="text-zinc-500 font-bold">{i + 1}</span>}</span>
-                    <span className="text-zinc-200">{r.name}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-zinc-500">Lv.{r.level}</span>
-                    <span className="font-mono font-bold text-indigo-400">{r.score.toLocaleString()}</span>
-                  </div>
+        {/* Ranking list */}
+        <div className="w-full max-w-[320px] max-h-[60vh] overflow-y-auto">
+          <div className="bg-zinc-900 rounded-lg border border-zinc-700 overflow-hidden">
+            {rankings.length === 0 && <p className="text-xs text-zinc-500 text-center py-3">랭킹 데이터 없음</p>}
+            {rankings.map((r, i) => (
+              <div key={i} className={`flex items-center justify-between px-3 py-1.5 text-xs ${i === 0 ? "bg-yellow-900/30" : i === 1 ? "bg-zinc-800/50" : i === 2 ? "bg-orange-900/20" : ""}`}>
+                <div className="flex items-center gap-2">
+                  <span className="w-5 text-center">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : <span className="text-zinc-500 font-bold">{i + 1}</span>}</span>
+                  <span className="text-zinc-200">{r.player_name}</span>
                 </div>
-              ))}
-            </div>
+                <span className="font-mono font-bold text-indigo-400">{r.score.toLocaleString()}</span>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
+        <button onClick={() => setShowFullRanking(false)}
+          className="px-5 py-2 text-sm bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded-lg">
+          ← 돌아가기
+        </button>
+      </div>
+    );
+  }
+
+  // If no difficulty selected, show home screen
+  if (!difficulty) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-5 select-none px-4">
+        <h1 className="text-2xl sm:text-4xl font-bold tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: "'Inter', sans-serif" }}>
+          Element Breaker
+        </h1>
+        <p className="text-zinc-400 text-sm">난이도를 선택하세요</p>
+        {/* Mode select + TOP 3 preview */}
+        <div className="flex gap-2 mb-1">
+          {([["easy","Easy","#22c55e"],["normal","Normal","#3b82f6"],["hard","Hard","#ef4444"]] as const).map(([k,l,c]) => (
+            <button key={k} onClick={async () => { setHomeTab(k); const r = await getTopRanks(k, 3); setHomeTop3(r); }}
+              className={`px-4 py-2 text-sm rounded-lg border transition-colors ${homeTab === k ? "border-zinc-400 bg-zinc-800" : "border-zinc-700 bg-zinc-900 hover:bg-zinc-800"}`}>
+              <span style={{ color: c }}>{l}</span>
+            </button>
+          ))}
+        </div>
+        {/* TOP 3 */}
+        <div className="w-full max-w-[280px]">
+          <div className="bg-zinc-900 rounded-lg border border-zinc-700 overflow-hidden">
+            {homeTop3.length === 0 && <p className="text-[10px] text-zinc-500 text-center py-2">기록 없음</p>}
+            {homeTop3.map((r, i) => (
+              <div key={i} className={`flex items-center justify-between px-3 py-1.5 text-xs ${i === 0 ? "bg-yellow-900/30" : i === 1 ? "bg-zinc-800/50" : i === 2 ? "bg-orange-900/20" : ""}`}>
+                <div className="flex items-center gap-2">
+                  <span className="w-5 text-center">{i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉"}</span>
+                  <span className="text-zinc-200">{r.player_name}</span>
+                </div>
+                <span className="font-mono font-bold text-indigo-400">{r.score.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Start button */}
+        <button onClick={() => startWithDifficulty(homeTab)}
+          className="w-full max-w-[280px] py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg transition-colors">
+          {homeTab.charAt(0).toUpperCase() + homeTab.slice(1)} 시작
+        </button>
+        {/* Full ranking link */}
+        <button onClick={async () => {
+          setRankingTab(homeTab);
+          const r = await getTopRanks(homeTab, 50);
+          setRankings(r);
+          setShowFullRanking(true);
+        }}
+          className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors">
+          🏆 전체 랭킹 보기
+        </button>
       </div>
     );
   }
@@ -1374,33 +1419,37 @@ export default function Game() {
                 )}
                 {/* Ranking save */}
                 {!rankSaved ? (
-                  <div className="flex items-center gap-2 mb-2">
-                    <input type="text" maxLength={8} placeholder="이름 입력"
-                      value={playerName} onChange={(e) => setPlayerName(e.target.value)}
-                      className="px-2 py-1 text-sm bg-zinc-800 border border-zinc-600 rounded text-zinc-200 w-24 text-center" />
-                    <button onClick={async () => {
-                      if (!playerName.trim()) return;
-                      await saveRank({ name: playerName.trim(), score, level, discovered: collected.size });
-                      // Small delay for Firebase to propagate
-                      await new Promise(res => setTimeout(res, 500));
-                      const r = await getTopRanks(50);
-                      setRankings(r);
-                      setRankSaved(true);
-                    }}
-                      className="px-3 py-1 text-sm bg-yellow-600 hover:bg-yellow-500 text-white font-semibold rounded transition-colors">
-                      등록
-                    </button>
+                  <div className="flex flex-col items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <input type="text" maxLength={10} placeholder="이름 입력"
+                        value={playerName}
+                        onChange={(e) => setPlayerName(e.target.value.replace(/[^a-zA-Z0-9가-힣ㄱ-ㅎㅏ-ㅣ]/g, ""))}
+                        className="px-2 py-1 text-sm bg-zinc-800 border border-zinc-600 rounded text-zinc-200 w-28 text-center" />
+                      <button onClick={async () => {
+                        if (!playerName.trim() || playerName.trim().length < 1) return;
+                        await saveRank(difficulty ?? "normal", playerName.trim(), score);
+                        await new Promise(res => setTimeout(res, 500));
+                        const r = await getTopRanks(difficulty ?? "normal", 50);
+                        setRankings(r);
+                        setRankSaved(true);
+                      }}
+                        className="px-3 py-1 text-sm bg-yellow-600 hover:bg-yellow-500 text-white font-semibold rounded transition-colors">
+                        등록
+                      </button>
+                    </div>
+                    <button onClick={() => setRankSaved(true)}
+                      className="text-xs text-zinc-500 hover:text-zinc-300">건너뛰기</button>
                   </div>
                 ) : (
-                  <div className="w-full max-w-[280px] mb-2">
-                    <p className="text-xs text-emerald-400 mb-1 text-center">랭킹 등록 완료!</p>
+                  <div className="w-full max-w-[300px] max-h-[40vh] overflow-y-auto mb-2">
+                    {playerName.trim() && <p className="text-xs text-emerald-400 mb-1 text-center">랭킹 등록 완료!</p>}
                     <div className="bg-zinc-900 rounded border border-zinc-700 overflow-hidden">
-                      {rankings.length === 0 && <p className="text-[10px] text-zinc-500 text-center py-2">불러오는 중...</p>}
+                      {rankings.length === 0 && <p className="text-[10px] text-zinc-500 text-center py-2">랭킹 데이터 없음</p>}
                       {rankings.map((r, i) => (
-                        <div key={i} className={`flex items-center justify-between px-2 py-1 text-[10px] ${r.name === playerName.trim() ? "bg-indigo-900/40" : ""}`}>
+                        <div key={i} className={`flex items-center justify-between px-2 py-1 text-[10px] ${r.player_name === playerName.trim() ? "bg-indigo-900/40" : ""}`}>
                           <div className="flex items-center gap-1.5">
                             <span className="w-4 text-center">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : <span className="text-zinc-500 font-bold">{i + 1}</span>}</span>
-                            <span className="text-zinc-200">{r.name}</span>
+                            <span className="text-zinc-200">{r.player_name}</span>
                           </div>
                           <span className="font-mono font-bold text-indigo-400">{r.score.toLocaleString()}</span>
                         </div>

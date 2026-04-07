@@ -1,5 +1,6 @@
 // ============================================================
 // Element Breaker – Firebase Ranking System
+// Mode-based rankings: ranking_easy / ranking_normal / ranking_hard
 // ============================================================
 
 import { initializeApp } from "firebase/app";
@@ -19,35 +20,40 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 export interface RankEntry {
-  name: string;
+  player_name: string;
   score: number;
-  level: number;
-  discovered: number;
+  mode: string;
   timestamp: number;
 }
 
-/** Save a score to the ranking */
-export async function saveRank(entry: Omit<RankEntry, "timestamp">): Promise<void> {
+/** Save a score to mode-specific ranking */
+export async function saveRank(mode: string, name: string, score: number): Promise<void> {
   try {
-    const rankRef = ref(db, "rankings");
-    await push(rankRef, { ...entry, timestamp: Date.now() });
+    const rankRef = ref(db, `ranking_${mode}`);
+    await push(rankRef, {
+      player_name: name,
+      score,
+      mode,
+      timestamp: Date.now(),
+    });
   } catch (e) {
     console.error("Failed to save rank:", e);
   }
 }
 
-/** Get top N rankings sorted by score (descending) */
-export async function getTopRanks(n: number = 10): Promise<RankEntry[]> {
+/** Get top N rankings for a specific mode, sorted by score desc then timestamp asc */
+export async function getTopRanks(mode: string, n: number = 50): Promise<RankEntry[]> {
   try {
-    const rankRef = ref(db, "rankings");
+    const rankRef = ref(db, `ranking_${mode}`);
     const snapshot = await get(rankRef);
     if (!snapshot.exists()) return [];
     const entries: RankEntry[] = [];
     snapshot.forEach((child) => {
       entries.push(child.val() as RankEntry);
     });
-    // Sort by score descending, take top N
-    return entries.sort((a, b) => b.score - a.score).slice(0, n);
+    return entries
+      .sort((a, b) => b.score - a.score || a.timestamp - b.timestamp)
+      .slice(0, n);
   } catch (e) {
     console.error("Failed to get ranks:", e);
     return [];
