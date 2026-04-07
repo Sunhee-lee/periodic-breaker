@@ -1209,58 +1209,84 @@ export default function Game() {
   // If no difficulty selected, show home screen
   if (!difficulty) {
     const modeLabel = homeTab.charAt(0).toUpperCase() + homeTab.slice(1);
-    const modeColor = homeTab === "easy" ? "#22c55e" : homeTab === "normal" ? "#3b82f6" : "#ef4444";
     const bestScore = homeTop3[0]?.score;
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4 select-none px-4"
-        style={{ backgroundImage: "url('/start.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
-        {/* Dark overlay for readability */}
-        <div className="absolute inset-0 bg-black/50" />
-        <div className="relative z-10 flex flex-col items-center gap-4">
-        {/* Title — big */}
-        <h1 className="text-3xl sm:text-5xl font-bold tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: "'Bungee', cursive" }}>
-          Element Breaker
-        </h1>
-        <p className="text-sm sm:text-lg text-zinc-300" style={{ fontFamily: "'Pretendard', sans-serif" }}>원소 브레이커</p>
+      <div className="relative flex flex-col items-center justify-end min-h-screen select-none"
+        style={{ backgroundImage: "url('/Title_image.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
+        {/* Dark gradient overlay — stronger at bottom for UI readability */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.85) 100%)" }} />
 
-        {/* START button — biggest */}
-        <button onClick={() => startWithDifficulty(homeTab)}
-          className="w-full max-w-[300px] py-5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-3xl tracking-widest transition-all"
-          style={{ animation: "pulse-glow 2s ease-in-out infinite", fontFamily: "'Bungee', cursive" }}>
-          START
-        </button>
+        {/* UI overlay — bottom section */}
+        <div className="relative z-10 flex flex-col items-center gap-3 pb-8 px-4 w-full max-w-[400px]">
 
-        {/* Mode select */}
-        <div className="flex gap-2">
-          {([["easy","Easy","#22c55e"],["normal","Normal","#3b82f6"],["hard","Hard","#ef4444"]] as const).map(([k,l,c]) => (
-            <button key={k} onClick={async () => { setHomeTab(k); const r = await getTopRanks(k, 3); setHomeTop3(r); }}
-              className={`px-5 py-2 text-sm rounded-lg transition-all ${homeTab === k
-                ? "border-2 bg-zinc-800 shadow-lg"
-                : "border border-zinc-700 bg-zinc-900 opacity-50 hover:opacity-80"}`}
-              style={homeTab === k ? { borderColor: c } : {}}>
-              <span style={{ color: c, fontWeight: homeTab === k ? 700 : 400 }}>{l}</span>
+          {/* Mode select */}
+          <div className="flex gap-2 mb-1">
+            {([["easy","Easy","#22c55e"],["normal","Normal","#3b82f6"],["hard","Hard","#ef4444"]] as const).map(([k,l,c]) => (
+              <button key={k} onClick={async () => { setHomeTab(k); const r = await getTopRanks(k, 3); setHomeTop3(r); }}
+                className={`px-5 py-2 text-sm rounded-lg transition-all ${homeTab === k
+                  ? "border-2 bg-black/60 shadow-lg backdrop-blur-sm"
+                  : "border border-white/20 bg-black/30 opacity-60 hover:opacity-90 backdrop-blur-sm"}`}
+                style={homeTab === k ? { borderColor: c } : {}}>
+                <span style={{ color: c, fontWeight: homeTab === k ? 700 : 400 }}>{l}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* GAME START label */}
+          <div className="flex items-center gap-2">
+            <span className="w-8 h-px bg-amber-500/50" />
+            <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] font-semibold text-amber-400"
+              style={{ textShadow: "0 0 8px rgba(245,158,11,0.5)" }}>
+              Game Start
+            </p>
+            <span className="w-8 h-px bg-amber-500/50" />
+          </div>
+
+          {/* PLAY button — main CTA */}
+          <button onClick={() => startWithDifficulty(homeTab)}
+            className="w-[60%] max-w-[280px] py-4 rounded-xl text-white font-bold text-3xl tracking-widest transition-all active:scale-95"
+            style={{
+              fontFamily: "'Bungee', cursive",
+              background: "linear-gradient(135deg, #f59e0b, #ea580c)",
+              border: "3px solid rgba(251,191,36,0.6)",
+              boxShadow: "0 0 25px rgba(245,158,11,0.4), inset 0 1px 0 rgba(255,255,255,0.2)",
+              animation: "pulse-glow-orange 2s ease-in-out infinite",
+            }}>
+            PLAY
+          </button>
+
+          {/* Ranking + Settings buttons */}
+          <div className="flex gap-3 w-[60%] max-w-[280px]">
+            <button onClick={async () => {
+              setRankingTab(homeTab);
+              const r = await getTopRanks(homeTab, 50);
+              setRankings(r);
+              setShowFullRanking(true);
+            }}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-blue-900/60 hover:bg-blue-800/70 border border-blue-500/40 backdrop-blur-sm text-blue-200 text-sm font-semibold transition-all">
+              🏆 <span>랭킹</span>
             </button>
-          ))}
-        </div>
+            <button onClick={() => setShowVolume(!showVolume)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-blue-900/60 hover:bg-blue-800/70 border border-blue-500/40 backdrop-blur-sm text-blue-200 text-sm font-semibold transition-all">
+              ⚙ <span>설정</span>
+            </button>
+          </div>
+          {showVolume && (
+            <div className="flex items-center gap-2 bg-black/50 rounded-lg px-3 py-2 backdrop-blur-sm">
+              <span className="text-xs text-zinc-400">음량</span>
+              <input type="range" min="0" max="100" value={Math.round(bgmVol * 100)}
+                onChange={(e) => { const v = Number(e.target.value) / 100; setBgmVol(v); setBGMVolume(v); }}
+                className="w-28 h-1 accent-amber-500" />
+            </div>
+          )}
 
-        {/* BEST score */}
-        <div className="text-center">
-          <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Best ({modeLabel})</p>
-          <p className="text-lg font-mono font-bold" style={{ color: modeColor }}>
-            {bestScore != null ? bestScore.toLocaleString() : "---"}
+          {/* Best score + level info */}
+          <p className="text-xs text-white/70 font-medium" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
+            현재 최고 점수: <span className="font-bold text-white">{bestScore != null ? bestScore.toLocaleString() : "---"}</span> | 레벨: <span className="font-bold text-white">1</span>
           </p>
-        </div>
 
-        {/* Ranking link — small, bottom */}
-        <button onClick={async () => {
-          setRankingTab(homeTab);
-          const r = await getTopRanks(homeTab, 50);
-          setRankings(r);
-          setShowFullRanking(true);
-        }}
-          className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors mt-2">
-          🏆 랭킹 보기
-        </button>
+          {/* Version */}
+          <p className="text-[9px] text-white/30">버전 1.0</p>
         </div>
       </div>
     );
@@ -1268,7 +1294,7 @@ export default function Game() {
 
   return (
     <div className="flex flex-col items-center gap-2 sm:gap-3 select-none py-2 sm:py-4 px-1 w-full max-w-[560px] mx-auto min-h-screen"
-      style={{ backgroundImage: "url('/game.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
+      style={{ backgroundImage: "url('/Title_image.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
       {/* Title */}
       <h1 className="text-xl sm:text-3xl font-bold tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: "'Bungee', cursive" }}>
         Element Breaker
