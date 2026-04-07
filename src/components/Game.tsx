@@ -1212,19 +1212,22 @@ export default function Game() {
     const modeColor = homeTab === "easy" ? "#22c55e" : homeTab === "normal" ? "#3b82f6" : "#ef4444";
     const bestScore = homeTop3[0]?.score;
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4 select-none px-4">
-        {/* Title — slightly smaller */}
-        <h1 className="text-xl sm:text-3xl font-bold tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: "'Bungee', cursive" }}>
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 select-none px-4"
+        style={{ backgroundImage: "url('/start.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
+        {/* Dark overlay for readability */}
+        <div className="absolute inset-0 bg-black/50" />
+        <div className="relative z-10 flex flex-col items-center gap-4">
+        {/* Title — big */}
+        <h1 className="text-3xl sm:text-5xl font-bold tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: "'Bungee', cursive" }}>
           Element Breaker
         </h1>
-        <p className="text-sm sm:text-lg text-zinc-400" style={{ fontFamily: "'Pretendard', sans-serif" }}>원소 브레이커</p>
+        <p className="text-sm sm:text-lg text-zinc-300" style={{ fontFamily: "'Pretendard', sans-serif" }}>원소 브레이커</p>
 
-        {/* START button — biggest, most prominent */}
+        {/* START button — biggest */}
         <button onClick={() => startWithDifficulty(homeTab)}
-          className="w-full max-w-[300px] py-5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-2xl transition-all"
-          style={{ animation: "pulse-glow 2s ease-in-out infinite" }}>
-          시작
-          <p className="text-xs font-normal opacity-70 mt-1">현재: {modeLabel}</p>
+          className="w-full max-w-[300px] py-5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-3xl tracking-widest transition-all"
+          style={{ animation: "pulse-glow 2s ease-in-out infinite", fontFamily: "'Bungee', cursive" }}>
+          START
         </button>
 
         {/* Mode select */}
@@ -1258,12 +1261,14 @@ export default function Game() {
           className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors mt-2">
           🏆 랭킹 보기
         </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-2 sm:gap-3 select-none py-2 sm:py-4 px-1 w-full max-w-[560px] mx-auto">
+    <div className="flex flex-col items-center gap-2 sm:gap-3 select-none py-2 sm:py-4 px-1 w-full max-w-[560px] mx-auto min-h-screen"
+      style={{ backgroundImage: "url('/game.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
       {/* Title */}
       <h1 className="text-xl sm:text-3xl font-bold tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: "'Bungee', cursive" }}>
         Element Breaker
