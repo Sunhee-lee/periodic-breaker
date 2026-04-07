@@ -671,7 +671,16 @@ export default function Game() {
       const vx = b.velocity.x;
       const vy = b.velocity.y;
       const mag = Math.sqrt(vx * vx + vy * vy);
-      if (mag > 0 && Math.abs(mag - sp) > 0.1) {
+
+      // Ball stuck (speed near zero or in corner) — force it downward
+      if (mag < 0.5) {
+        const nx = (Math.random() - 0.5) * sp * 0.5;
+        Matter.Body.setVelocity(b, { x: nx, y: sp * 0.8 });
+        // Nudge away from walls/corners
+        const bx = Math.max(BALL_R + 5, Math.min(GW - BALL_R - 5, b.position.x));
+        const by = Math.max(BALL_R + 5, b.position.y);
+        Matter.Body.setPosition(b, { x: bx, y: by + 3 });
+      } else if (Math.abs(mag - sp) > 0.1) {
         const s = sp / mag;
         Matter.Body.setVelocity(b, { x: vx * s, y: vy * s });
       }
