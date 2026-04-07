@@ -27,7 +27,7 @@ const BALL_R = 8;
 const WALL_T = 20;
 const LIVES = 3;
 // Difficulty = paddle width
-const DIFF_PADDLE: Record<string, number> = { easy: 130, normal: 100, hard: 70 };
+// Difficulty removed — always normal paddle size
 
 // Top 3 most radioactive elements (shortest half-life) → multiball
 const MULTIBALL_ELEMENTS = new Set([118, 117, 116]); // Og, Ts, Lv
@@ -255,7 +255,7 @@ export default function Game() {
     clearRef.current = false;
     ballSpeedRef.current = BASE_SPEED;
     ballRadiusRef.current = BALL_R;
-    const pw = DIFF_PADDLE[difficulty ?? "normal"] ?? PADDLE_W;
+    const pw = PADDLE_W;
     paddleWRef.current = pw;
     paddleSpeedMultRef.current = 1;
     floorShieldEndRef.current = 0;
@@ -363,10 +363,10 @@ export default function Game() {
     }
   }, [difficulty]);
 
-  // Load home TOP 3 when homeTab changes
+  // Load home TOP 3
   useEffect(() => {
-    getTopRanks(homeTab, 3).then(setHomeTop3).catch(() => {});
-  }, [homeTab]);
+    getTopRanks("normal", 3).then(setHomeTop3).catch(() => {});
+  }, [difficulty]);
 
   // Keyboard: Escape or P to toggle pause
   useEffect(() => {
@@ -400,7 +400,7 @@ export default function Game() {
     const leftW = Matter.Bodies.rectangle(-WALL_T / 2, GH / 2, WALL_T, GH, wo);
     const rightW = Matter.Bodies.rectangle(GW + WALL_T / 2, GH / 2, WALL_T, GH, wo);
 
-    const initPW = DIFF_PADDLE[difficulty ?? "normal"] ?? PADDLE_W;
+    const initPW = PADDLE_W;
     paddleWRef.current = initPW;
     const paddle = Matter.Bodies.rectangle(GW / 2, GH - 40, initPW, PADDLE_H, {
       isStatic: true, restitution: 1, friction: 0, frictionStatic: 0,
@@ -1161,7 +1161,7 @@ export default function Game() {
   // Difficulty select handler
   const startWithDifficulty = useCallback((diff: string) => {
     setDifficulty(diff);
-    const pw = DIFF_PADDLE[diff] ?? PADDLE_W;
+    const pw = PADDLE_W;
     paddleWRef.current = pw;
     if (stateRef.current) {
       stateRef.current.paddle.width = pw;
@@ -1174,15 +1174,6 @@ export default function Game() {
     return (
       <div className="flex flex-col items-center min-h-screen gap-4 select-none px-4 py-6">
         <h2 className="text-xl font-bold text-zinc-200">🏆 랭킹</h2>
-        {/* Mode tabs */}
-        <div className="flex gap-2">
-          {([["easy","Easy","#22c55e"],["normal","Normal","#3b82f6"],["hard","Hard","#ef4444"]] as const).map(([k,l,c]) => (
-            <button key={k} onClick={async () => { setRankingTab(k); const r = await getTopRanks(k, 50); setRankings(r); }}
-              className={`px-4 py-1.5 text-sm rounded-lg border transition-colors ${rankingTab === k ? "border-zinc-400 bg-zinc-800" : "border-zinc-700 bg-zinc-900"}`}>
-              <span style={{ color: c }}>{l}</span>
-            </button>
-          ))}
-        </div>
         {/* Ranking list */}
         <div className="w-full max-w-[320px] max-h-[60vh] overflow-y-auto">
           <div className="bg-zinc-900 rounded-lg border border-zinc-700 overflow-hidden">
@@ -1208,29 +1199,15 @@ export default function Game() {
 
   // If no difficulty selected, show home screen
   if (!difficulty) {
-    const modeLabel = homeTab.charAt(0).toUpperCase() + homeTab.slice(1);
     const bestScore = homeTop3[0]?.score;
     return (
-      <div className="relative flex flex-col items-center justify-end min-h-screen select-none"
+      <div className="relative flex flex-col items-center justify-end min-h-screen select-none max-w-[560px] mx-auto"
         style={{ backgroundImage: "url('/Title_image.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
         {/* Dark gradient overlay — stronger at bottom for UI readability */}
         <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.85) 100%)" }} />
 
         {/* UI overlay — bottom section */}
         <div className="relative z-10 flex flex-col items-center gap-3 pb-8 px-4 w-full max-w-[400px]">
-
-          {/* Mode select */}
-          <div className="flex gap-2 mb-1">
-            {([["easy","Easy","#22c55e"],["normal","Normal","#3b82f6"],["hard","Hard","#ef4444"]] as const).map(([k,l,c]) => (
-              <button key={k} onClick={async () => { setHomeTab(k); const r = await getTopRanks(k, 3); setHomeTop3(r); }}
-                className={`px-5 py-2 text-sm rounded-lg transition-all ${homeTab === k
-                  ? "border-2 bg-black/60 shadow-lg backdrop-blur-sm"
-                  : "border border-white/20 bg-black/30 opacity-60 hover:opacity-90 backdrop-blur-sm"}`}
-                style={homeTab === k ? { borderColor: c } : {}}>
-                <span style={{ color: c, fontWeight: homeTab === k ? 700 : 400 }}>{l}</span>
-              </button>
-            ))}
-          </div>
 
           {/* GAME START label */}
           <div className="flex items-center gap-2">
@@ -1243,7 +1220,7 @@ export default function Game() {
           </div>
 
           {/* PLAY button — main CTA */}
-          <button onClick={() => startWithDifficulty(homeTab)}
+          <button onClick={() => startWithDifficulty("normal")}
             className="w-[60%] max-w-[280px] py-4 rounded-xl text-white font-bold text-3xl tracking-widest transition-all active:scale-95"
             style={{
               fontFamily: "'Bungee', cursive",
@@ -1258,8 +1235,8 @@ export default function Game() {
           {/* Ranking + Settings buttons */}
           <div className="flex gap-3 w-[60%] max-w-[280px]">
             <button onClick={async () => {
-              setRankingTab(homeTab);
-              const r = await getTopRanks(homeTab, 50);
+              setRankingTab("normal");
+              const r = await getTopRanks("normal", 50);
               setRankings(r);
               setShowFullRanking(true);
             }}
@@ -1294,7 +1271,7 @@ export default function Game() {
 
   return (
     <div className="flex flex-col items-center gap-2 sm:gap-3 select-none py-2 sm:py-4 px-1 w-full max-w-[560px] mx-auto min-h-screen"
-      style={{ backgroundImage: "url('/Title_image.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
+      style={{ backgroundImage: "url('/Game_imange.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
       {/* Title */}
       <h1 className="text-xl sm:text-3xl font-bold tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: "'Bungee', cursive" }}>
         Element Breaker
@@ -1467,9 +1444,9 @@ export default function Game() {
                         className="px-2 py-1 text-sm bg-zinc-800 border border-zinc-600 rounded text-zinc-200 w-28 text-center" />
                       <button onClick={async () => {
                         if (!playerName.trim() || playerName.trim().length < 1) return;
-                        await saveRank(difficulty ?? "normal", playerName.trim(), score);
+                        await saveRank("normal", playerName.trim(), score);
                         await new Promise(res => setTimeout(res, 500));
-                        const r = await getTopRanks(difficulty ?? "normal", 50);
+                        const r = await getTopRanks("normal", 50);
                         setRankings(r);
                         setRankSaved(true);
                       }}
