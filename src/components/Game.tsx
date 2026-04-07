@@ -1176,13 +1176,13 @@ export default function Game() {
           🏆 랭킹 보기
         </button>
         {showRanking && (
-          <div className="w-full max-w-[300px]">
+          <div className="w-full max-w-[300px] max-h-[50vh] overflow-y-auto">
             <div className="bg-zinc-900 rounded-lg border border-zinc-700 overflow-hidden">
               {rankings.length === 0 && <p className="text-xs text-zinc-500 text-center py-3">랭킹 데이터 없음</p>}
               {rankings.map((r, i) => (
                 <div key={i} className={`flex items-center justify-between px-3 py-1.5 text-xs ${i === 0 ? "bg-yellow-900/30" : i === 1 ? "bg-zinc-800/50" : i === 2 ? "bg-orange-900/20" : ""}`}>
                   <div className="flex items-center gap-2">
-                    <span className={`font-bold w-5 ${i === 0 ? "text-yellow-400" : i === 1 ? "text-zinc-300" : i === 2 ? "text-orange-400" : "text-zinc-500"}`}>{i + 1}</span>
+                    <span className="w-5 text-center">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : <span className="text-zinc-500 font-bold">{i + 1}</span>}</span>
                     <span className="text-zinc-200">{r.name}</span>
                   </div>
                   <div className="flex items-center gap-3">
@@ -1383,7 +1383,7 @@ export default function Game() {
                       {rankings.map((r, i) => (
                         <div key={i} className={`flex items-center justify-between px-2 py-1 text-[10px] ${r.name === playerName.trim() ? "bg-indigo-900/40" : ""}`}>
                           <div className="flex items-center gap-1.5">
-                            <span className={`font-bold w-4 ${i === 0 ? "text-yellow-400" : i === 1 ? "text-zinc-300" : i === 2 ? "text-orange-400" : "text-zinc-500"}`}>{i + 1}</span>
+                            <span className="w-4 text-center">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : <span className="text-zinc-500 font-bold">{i + 1}</span>}</span>
                             <span className="text-zinc-200">{r.name}</span>
                           </div>
                           <span className="font-mono font-bold text-indigo-400">{r.score.toLocaleString()}</span>
