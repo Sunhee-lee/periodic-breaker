@@ -1252,7 +1252,7 @@ export default function Game() {
           </div>
           {showVolume && (
             <div className="flex items-center gap-2 bg-black/50 rounded-lg px-3 py-2 backdrop-blur-sm">
-              <span className="text-xs text-zinc-400">음량</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
               <input type="range" min="0" max="100" value={Math.round(bgmVol * 100)}
                 onChange={(e) => { const v = Number(e.target.value) / 100; setBgmVol(v); setBGMVolume(v); }}
                 className="w-28 h-1 accent-amber-500" />
