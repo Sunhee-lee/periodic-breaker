@@ -163,13 +163,13 @@ export function sndPowerup() {
 //  Background Music — mp3 files per level
 // ────────────────────────────────────────────────────────────
 
-const BGM_SRCS = ["/level1.mp3", "/level2.mp3", "/level3.mp3"];
+const BGM_SRCS = ["/level1.mp3", "/level2.mp3", "/level3.mp3", "/level4.mp3", "/level5.mp3", "/level6.mp3", "/level7.mp3"];
 let bgmAudio: HTMLAudioElement | null = null;
 
 export function startBGM(level: number) {
   stopBGM();
   try {
-    const idx = Math.max(0, Math.min(2, level - 1));
+    const idx = Math.max(0, Math.min(BGM_SRCS.length - 1, level - 1));
     bgmAudio = new Audio(BGM_SRCS[idx]);
     bgmAudio.loop = true;
     bgmAudio.volume = 0.3;

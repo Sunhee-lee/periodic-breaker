@@ -3,10 +3,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "원소브레이커 | Element Breaker",
-  description: "주기율표 원소로 만든 벽돌깨기 게임",
+  description: "원소 블록을 깨는 짜릿한 아케이드 게임!",
   openGraph: {
     title: "원소브레이커 | Element Breaker",
-    description: "주기율표 원소로 만든 벽돌깨기 게임",
+    description: "원소 블록을 깨는 짜릿한 아케이드 게임!",
     type: "website",
     images: [{ url: "/Title_share.png", width: 1200, height: 630 }],
   },

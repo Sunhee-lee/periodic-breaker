@@ -12,6 +12,7 @@ import { executeEffect, type BlockRuntime, type GameState } from "@/game/effects
 import { VfxManager } from "@/game/vfx";
 import { getFlavorText } from "@/game/elementFlavor";
 import { saveRank, getTopRanks, type RankEntry } from "@/game/firebase";
+import { getBlockVisualStyle } from "@/game/blockColors";
 import {
   sndPaddle, sndBlockBreak, sndExplosion, sndRadioactive,
   sndCombo, sndPowerup, sndLifeLost, sndMetal,
@@ -35,18 +36,9 @@ const MULTIBALL_ELEMENTS = new Set([118, 117, 116]); // Og, Ts, Lv
 const BASE_SPEED = 6;
 
 // Level configs
-const LEVEL_TIMES = [420, 300, 180, 180, 180]; // L1:7m L2:5m L3-5:3m
-const LEVEL_SPEED = [BASE_SPEED, BASE_SPEED * 1.2, BASE_SPEED * 1.5, BASE_SPEED * 1.7, BASE_SPEED * 1.7];
-const LEVEL_PADDLE = [PADDLE_W, PADDLE_W, PADDLE_W, PADDLE_W * 0.8, PADDLE_W * 0.65]; // L4: 80px, L5: 65px
-// Level color themes
-type LevelTheme = { hueShift: number; tintR: number; tintG: number; tintB: number };
-const LEVEL_THEMES: LevelTheme[] = [
-  { hueShift: 0, tintR: 0, tintG: 0, tintB: 0 },        // L1: original colors
-  { hueShift: 0, tintR: 60, tintG: -20, tintB: -30 },    // L2: red/warm tint
-  { hueShift: 0, tintR: -20, tintG: 20, tintB: 80 },     // L3: blue/white ice tint
-  { hueShift: 0, tintR: 40, tintG: -10, tintB: 50 },     // L4: purple tint
-  { hueShift: 0, tintR: 50, tintG: 40, tintB: -30 },     // L5: yellow/gold tint
-];
+const LEVEL_TIMES = [420, 300, 180, 180, 180, 120, 120]; // L1:7m L2:5m L3-5:3m L6-7:2m
+const LEVEL_SPEED = [BASE_SPEED, BASE_SPEED * 1.2, BASE_SPEED * 1.5, BASE_SPEED * 1.7, BASE_SPEED * 1.7, BASE_SPEED * 1.9, BASE_SPEED * 2.1];
+const LEVEL_PADDLE = [PADDLE_W, PADDLE_W, PADDLE_W, PADDLE_W * 0.8, PADDLE_W * 0.65, PADDLE_W * 0.6, PADDLE_W * 0.6];
 const COLS = 18;
 const BG = 1;
 const BM = 4;
@@ -67,16 +59,6 @@ interface FloatingText {
 }
 
 // ── Helpers ───────────────────────────────────────────────
-/** Apply level theme tint to a hex color */
-function tintColor(hex: string, theme: LevelTheme): string {
-  if (theme.tintR === 0 && theme.tintG === 0 && theme.tintB === 0) return hex;
-  const m = hex.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
-  if (!m) return hex;
-  const r = Math.max(0, Math.min(255, parseInt(m[1], 16) + theme.tintR));
-  const g = Math.max(0, Math.min(255, parseInt(m[2], 16) + theme.tintG));
-  const b = Math.max(0, Math.min(255, parseInt(m[3], 16) + theme.tintB));
-  return `rgb(${r},${g},${b})`;
-}
 
 function blockPos(row: number, col: number) {
   // Rows 1-7 are the main table, rows 8-9 are Ln/Ac with extra gap
@@ -297,7 +279,7 @@ export default function Game() {
     const engine = engineRef.current;
     if (!engine) return;
     const newLv = levelRef.current + 1;
-    if (newLv > 5) return; // max level 5
+    if (newLv > 7) return; // max level 7
     // Remove old blocks
     for (const b of blocksRef.current) {
       const body = (b as BlockRuntime & { body: Matter.Body }).body;
@@ -888,14 +870,7 @@ export default function Game() {
       for (const blk of blocksRef.current) {
         if (!blk.alive) continue;
         const el = ELEMENTS.find((e) => e.atomicNumber === blk.id)!;
-        const baseColors = GROUP_COLORS[el.group];
-        const theme = LEVEL_THEMES[levelRef.current - 1] ?? LEVEL_THEMES[0];
-        const colors = {
-          fill: tintColor(baseColors.fill, theme),
-          glow: baseColors.glow,
-          text: "#ffffff",
-          border: tintColor(baseColors.border, theme),
-        };
+        const vs = getBlockVisualStyle(el.symbol, levelRef.current);
         const bx = blk.x - BW / 2;
         const by = blk.y - BH / 2;
 
@@ -907,18 +882,18 @@ export default function Game() {
         const blockAlpha = 0.35 + hpRatio * 0.65;
         ctx.globalAlpha = blockAlpha;
 
-        // Glow
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = isFrozen ? "rgba(56,189,248,0.6)" : colors.glow;
+        // Glow — intensity from family palette
+        ctx.shadowBlur = levelRef.current <= 2 ? 6 : levelRef.current <= 4 ? 10 : 14;
+        ctx.shadowColor = isFrozen ? "rgba(56,189,248,0.6)" : vs.glowColor;
 
         // Fill
-        ctx.fillStyle = isFrozen ? "#0ea5e9" : colors.fill;
+        ctx.fillStyle = isFrozen ? "#0ea5e9" : vs.fillColor;
         roundRect(ctx, bx, by, BW, BH, 3);
         ctx.fill();
 
         // Border
         ctx.shadowBlur = 0;
-        ctx.strokeStyle = isFrozen ? "#38bdf8" : colors.border;
+        ctx.strokeStyle = isFrozen ? "#38bdf8" : vs.borderColor;
         ctx.lineWidth = 1;
         ctx.stroke();
         ctx.globalAlpha = 1;
@@ -942,7 +917,7 @@ export default function Game() {
         }
 
         // Atomic number (top-left, tiny)
-        ctx.fillStyle = colors.text;
+        ctx.fillStyle = vs.textColor;
         ctx.globalAlpha = 0.45;
         ctx.font = "bold 6px Pretendard, sans-serif";
         ctx.textAlign = "left";
@@ -951,7 +926,7 @@ export default function Game() {
         ctx.globalAlpha = 1;
 
         // Symbol (center)
-        ctx.fillStyle = colors.text;
+        ctx.fillStyle = vs.textColor;
         ctx.font = "bold 10px Pretendard, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
@@ -1299,10 +1274,8 @@ export default function Game() {
 
   return (
     <div className="flex flex-col items-center gap-2 sm:gap-3 select-none py-2 sm:py-4 px-1 w-full max-w-[560px] mx-auto min-h-[100dvh] bg-black">
-      {/* Title */}
-      <h1 className="text-xl sm:text-3xl font-bold tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: "'Bungee', cursive" }}>
-        Element Breaker
-      </h1>
+      {/* Title image */}
+      <img src="/Title_inside.png" alt="Element Breaker" className="w-[70%] max-w-[400px] h-auto" />
 
       {/* HUD */}
       <div className="flex items-center justify-between w-full px-1 sm:px-2 text-xs sm:text-sm">
@@ -1421,7 +1394,7 @@ export default function Game() {
                     );
                   })}
                 </div>
-                {level < 5 ? (
+                {level < 7 ? (
                   <button onClick={nextLevel}
                     className="px-5 py-2 text-sm sm:text-base bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-colors shadow-[0_0_20px_rgba(16,185,129,0.3)] mb-2">
                     Level {level + 1} 시작
