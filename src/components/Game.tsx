@@ -937,10 +937,15 @@ export default function Game() {
 
         // Symbol (center)
         ctx.fillStyle = vs.textColor;
+        if (levelRef.current >= 7) {
+          ctx.shadowBlur = 2;
+          ctx.shadowColor = "rgba(0,0,0,0.5)";
+        }
         ctx.font = "bold 10px Pretendard, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(el.symbol, blk.x, blk.y + 2);
+        ctx.shadowBlur = 0;
 
 
       }
