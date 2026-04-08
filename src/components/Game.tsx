@@ -1293,58 +1293,70 @@ export default function Game() {
       <img src="/Title_inside.png" alt="Element Breaker" className="w-full max-w-[560px] h-auto" />
 
       {/* HUD */}
-      <div className="flex items-center justify-between w-full px-1 sm:px-2 text-xs sm:text-sm">
-        {/* Left: Lives */}
-        <div className="flex gap-0.5 w-1/4">
-          {Array.from({ length: LIVES }).map((_, i) => (
-            <span key={i} className={`text-sm sm:text-base transition-colors duration-300 ${
-              i < lives ? "text-blue-400 drop-shadow-[0_0_4px_rgba(96,165,250,0.8)]" : "text-zinc-700"
-            }`}>♥</span>
-          ))}
+      {/* ── HUD ── */}
+      <div className="flex items-start justify-between w-full px-2 py-1">
+        {/* Left: Lives + control icons */}
+        <div className="flex flex-col gap-1">
+          {/* Hearts */}
+          <div className="flex gap-0.5">
+            {Array.from({ length: LIVES }).map((_, i) => (
+              <span key={i} className="transition-colors duration-300"
+                style={{ fontSize: "21px", lineHeight: 1, color: i < lives ? "#7FB3FF" : "rgba(255,255,255,0.18)", textShadow: i < lives ? "0 0 6px rgba(127,179,255,0.5)" : "none" }}>
+                ♥
+              </span>
+            ))}
+          </div>
+          {/* Control icons */}
+          {launched && (
+            <div className="flex items-center gap-1">
+              <button onClick={() => { stopBGM(); restartGame(); setDifficulty(null); }}
+                className="w-6 h-6 flex items-center justify-center rounded active:brightness-150"
+                style={{ background: "rgba(30,40,80,0.45)", border: "1px solid rgba(180,210,255,0.28)" }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#DCE7FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              </button>
+              <button onClick={() => setShowVolume(!showVolume)}
+                className="w-6 h-6 flex items-center justify-center rounded active:brightness-150"
+                style={{ background: "rgba(30,40,80,0.45)", border: "1px solid rgba(180,210,255,0.28)" }}>
+                {bgmVol > 0 ? (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#DCE7FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+                ) : (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" stroke="#DCE7FF"/><line x1="23" y1="9" x2="17" y2="15" stroke="#FF6B6B"/><line x1="17" y1="9" x2="23" y2="15" stroke="#FF6B6B"/></svg>
+                )}
+              </button>
+              {!gameOver && !stageClear && !paused ? (
+                <button onClick={togglePause}
+                  className="w-6 h-6 flex items-center justify-center rounded active:brightness-150"
+                  style={{ background: "rgba(30,40,80,0.45)", border: "1px solid rgba(180,210,255,0.28)" }}>
+                  <svg width="9" height="9" viewBox="0 0 14 14" fill="#DCE7FF"><rect x="2" y="1" width="3.5" height="12" /><rect x="8.5" y="1" width="3.5" height="12" /></svg>
+                </button>
+              ) : <div className="w-6" />}
+              {showVolume && (
+                <input type="range" min="0" max="100" value={Math.round(bgmVol * 100)}
+                  onChange={(e) => { const v = Number(e.target.value) / 100; setBgmVol(v); setBGMVolume(v); }}
+                  className="w-16 h-1 accent-blue-400" />
+              )}
+            </div>
+          )}
         </div>
-        {/* Center: Score */}
-        <div className="flex items-center justify-center gap-1 w-2/4">
-          <span className="text-base sm:text-lg font-mono font-bold text-indigo-400">{score.toLocaleString()}</span>
-        </div>
-        {/* Right: Time + Level */}
-        <div className="flex items-center justify-end gap-2 w-1/4">
-          <span className={`text-sm font-mono font-bold ${timeLeft <= 30 ? "text-red-400" : "text-zinc-300"}`}>
-            {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")}
-          </span>
-          <span className="text-xs font-bold text-purple-400">Lv.{level}</span>
+
+        {/* Right: Lv+Time (line1) + Score (line2) */}
+        <div className="flex flex-col items-end">
+          {/* Line 1: Level + Time */}
+          <div className="flex items-center gap-3" style={{ fontVariantNumeric: "tabular-nums" }}>
+            <span style={{ fontSize: "16px", fontWeight: 600, lineHeight: 1.15, color: "#C9B7FF" }}>Lv.{level}</span>
+            <span style={{ fontSize: "16px", fontWeight: 600, lineHeight: 1.15, color: timeLeft <= 30 ? "#FF5A5F" : "#DCE7FF", fontVariantNumeric: "tabular-nums" }}>
+              {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")}
+            </span>
+          </div>
+          {/* Line 2: Score */}
+          <div className="flex flex-col items-end mt-0.5">
+            <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", color: "rgba(220,231,255,0.62)", lineHeight: 1 }}>SCORE</span>
+            <span style={{ fontSize: "22px", fontWeight: 800, lineHeight: 1.05, color: "#F4F7FF", textShadow: "0 0 8px rgba(120,160,255,0.28)", fontVariantNumeric: "tabular-nums", minWidth: "90px", textAlign: "right" as const, display: "inline-block" }}>
+              {score.toLocaleString()}
+            </span>
+          </div>
         </div>
       </div>
-
-      {/* Control bar — above canvas */}
-      {launched && (
-        <div className="flex items-center justify-between w-full px-1 mb-1 text-xs">
-          <div className="flex items-center gap-1">
-            <button onClick={() => { stopBGM(); restartGame(); setDifficulty(null); }}
-              className="w-7 h-7 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            </button>
-            <button onClick={() => setShowVolume(!showVolume)}
-              className="w-7 h-7 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400">
-              {bgmVol > 0 ? (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-              )}
-            </button>
-            {showVolume && (
-              <input type="range" min="0" max="100" value={Math.round(bgmVol * 100)}
-                onChange={(e) => { const v = Number(e.target.value) / 100; setBgmVol(v); setBGMVolume(v); }}
-                className="w-20 h-1 accent-indigo-500" />
-            )}
-          </div>
-          {!gameOver && !stageClear && !paused ? (
-            <button onClick={togglePause}
-              className="w-7 h-7 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400">
-              <svg width="10" height="10" viewBox="0 0 14 14" fill="currentColor"><rect x="2" y="1" width="3.5" height="12" /><rect x="8.5" y="1" width="3.5" height="12" /></svg>
-            </button>
-          ) : <div className="w-7" />}
-        </div>
-      )}
 
       {/* Canvas */}
       <div className="relative rounded-lg overflow-hidden shadow-[0_0_40px_rgba(99,102,241,0.15)] w-full">
