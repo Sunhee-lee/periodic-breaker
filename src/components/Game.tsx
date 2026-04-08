@@ -1302,7 +1302,7 @@ export default function Game() {
   return (
     <div className="flex flex-col items-center gap-2 sm:gap-3 select-none py-2 sm:py-4 px-1 w-full max-w-[560px] mx-auto min-h-[100dvh] bg-black">
       {/* Title image */}
-      <img src="/Title_inside.png" alt="Element Breaker" className="w-full max-w-[560px] h-auto" />
+      <img src="/Title_inside.webp" alt="Element Breaker" className="w-full max-w-[560px] h-auto" />
 
       {/* HUD */}
       {/* ── HUD ── */}
