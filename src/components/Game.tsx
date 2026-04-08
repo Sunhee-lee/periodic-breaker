@@ -125,6 +125,8 @@ export default function Game() {
   const [showVolume, setShowVolume] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [sfxOn, setSfxOn] = useState(true);
+  // Keep ref in sync for use inside useEffect
+  useEffect(() => { sfxOnRef.current = sfxOn; }, [sfxOn]);
   const [playerName, setPlayerName] = useState("");
   const [rankSaved, setRankSaved] = useState(false);
   const [rankings, setRankings] = useState<RankEntry[]>([]);
@@ -154,7 +156,8 @@ export default function Game() {
   const gasZoneHeightRef = useRef(0);
   const comboRef = useRef(0);
   const shakeRef = useRef(0);
-  const stallFramesRef = useRef(0); // counts frames where ball is nearly horizontal
+  const stallFramesRef = useRef(0);
+  const sfxOnRef = useRef(true);
   const levelRef = useRef(1);
   const timerStartRef = useRef(0); // performance.now() when launched // remaining shake frames
   const collectedRef = useRef<Set<number>>(new Set());
@@ -470,12 +473,14 @@ export default function Game() {
         const isExplosive = blk.effect === "explosion";
         const isRadioactive = blk.effect === "radioactive_pierce";
         const isMetal = blk.effect === "heavy_ball" || (blk.effect === "paddle_grow" && blk.id === 22);
-        if (isExplosive) { sndExplosion(); }
-        else if (isRadioactive) { sndRadioactive(); }
-        else if (isMetal) { sndMetal(); }
-        else { sndBlockBreak(); }
-        if (comboLevel >= 3) sndCombo(comboLevel);
-        if (blk.effect === "paddle_grow") sndPowerup();
+        if (sfxOnRef.current) {
+          if (isExplosive) { sndExplosion(); }
+          else if (isRadioactive) { sndRadioactive(); }
+          else if (isMetal) { sndMetal(); }
+          else { sndBlockBreak(); }
+          if (comboLevel >= 3) sndCombo(comboLevel);
+          if (blk.effect === "paddle_grow") sndPowerup();
+        }
 
         // Camera shake for big explosions
         if (isExplosive && [11, 19, 37, 55].includes(blk.id)) {
@@ -647,7 +652,7 @@ export default function Game() {
         }
         livesRef.current -= 1;
         setLives(livesRef.current);
-        sndLifeLost();
+        if (sfxOnRef.current) sndLifeLost();
         comboRef.current = 0;
         if (livesRef.current <= 0) {
           goRef.current = true;
@@ -780,7 +785,7 @@ export default function Game() {
             x: Math.cos(angle) * sp,
             y: Math.sin(angle) * sp,
           });
-          sndPaddle();
+          if (sfxOnRef.current) sndPaddle();
           comboRef.current = 0;
           // Radioactive pierce: only reset when MAIN ball hits paddle
           if (gs.ball.pierce && ballBody === ballRef.current) {
