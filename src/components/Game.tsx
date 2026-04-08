@@ -886,20 +886,26 @@ export default function Game() {
         const blockAlpha = 0.35 + hpRatio * 0.65;
         ctx.globalAlpha = blockAlpha;
 
-        // Glow — intensity from family palette
+        // Glow
         ctx.shadowBlur = levelRef.current <= 2 ? 6 : levelRef.current <= 4 ? 10 : 14;
         ctx.shadowColor = isFrozen ? "rgba(56,189,248,0.6)" : vs.glowColor;
 
-        // Fill
+        // Fill — level color
         ctx.fillStyle = isFrozen ? "#0ea5e9" : vs.fillColor;
         roundRect(ctx, bx, by, BW, BH, 3);
         ctx.fill();
 
-        // Border
+        // Border — family accent color
         ctx.shadowBlur = 0;
         ctx.strokeStyle = isFrozen ? "#38bdf8" : vs.borderColor;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = vs.borderWidth;
         ctx.stroke();
+
+        // Top accent bar — family identity stripe
+        if (!isFrozen) {
+          ctx.fillStyle = vs.accentColor;
+          ctx.fillRect(bx + 2, by, BW - 4, 2);
+        }
         ctx.globalAlpha = 1;
 
         // Durability indicator for multi-hp blocks
@@ -1354,13 +1360,13 @@ export default function Game() {
                 const el = ELEMENTS.find(e => e.row === r && e.col === c);
                 if (!el) return <div key={i} />;
                 const found = levelCollected.has(el.atomicNumber);
-                const clr = GROUP_COLORS[el.group];
+                const vs = getBlockVisualStyle(el.symbol, level);
                 return (
                   <div key={el.atomicNumber}
                     className={`flex flex-col items-center justify-center rounded ${found ? "" : "opacity-15"}`}
-                    style={{ background: found ? clr.fill : "#27272a", aspectRatio: "1" }}>
-                    <span style={{ fontSize: "3px", color: found ? "rgba(255,255,255,0.5)" : "#555", lineHeight: 1 }}>{el.atomicNumber}</span>
-                    <span style={{ fontSize: "5px", fontWeight: 700, color: found ? "#fff" : "#555", lineHeight: 1 }}>{el.symbol}</span>
+                    style={{ background: found ? vs.fillColor : "#27272a", aspectRatio: "1" }}>
+                    <span style={{ fontSize: "clamp(4px,1vw,6px)", color: found ? "rgba(255,255,255,0.5)" : "#555", lineHeight: 1 }}>{el.atomicNumber}</span>
+                    <span style={{ fontSize: "clamp(6px,1.5vw,9px)", fontWeight: 700, color: found ? "#fff" : "#555", lineHeight: 1 }}>{el.symbol}</span>
                   </div>
                 );
               })}
@@ -1380,20 +1386,20 @@ export default function Game() {
                 <p className="text-2xl sm:text-3xl font-bold text-emerald-400 mb-1">Level {level} Clear!</p>
                 <p className="text-sm text-zinc-400 mb-1">Score: <span className="text-indigo-400 font-bold">{score.toLocaleString()}</span></p>
                 <p className="text-xs text-zinc-500 mb-2">이번 레벨 발견: {levelCollected.size}개 | 전체: {collected.size}/118</p>
-                {/* This level's collection grid */}
+                {/* This level's collection grid — family colors */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(18, 1fr)", gap: "1px" }} className="mb-3 w-full max-w-full overflow-hidden">
                   {Array.from({ length: 9 * 18 }, (_, i) => {
                     const r = Math.floor(i / 18) + 1, c = (i % 18) + 1;
                     const el = ELEMENTS.find(e => e.row === r && e.col === c);
                     if (!el) return <div key={i} />;
                     const found = levelCollected.has(el.atomicNumber);
-                    const clr = GROUP_COLORS[el.group];
+                    const vs = getBlockVisualStyle(el.symbol, level);
                     return (
                       <div key={el.atomicNumber}
                         className={`flex flex-col items-center justify-center rounded ${found ? "" : "opacity-15"}`}
-                        style={{ background: found ? clr.fill : "#27272a", aspectRatio: "1" }}>
-                        <span style={{ fontSize: "3px", color: found ? "rgba(255,255,255,0.5)" : "#555", lineHeight: 1 }}>{el.atomicNumber}</span>
-                        <span style={{ fontSize: "5px", fontWeight: 700, color: found ? "#fff" : "#555", lineHeight: 1 }}>{el.symbol}</span>
+                        style={{ background: found ? vs.fillColor : "#27272a", aspectRatio: "1" }}>
+                        <span style={{ fontSize: "clamp(4px,1vw,6px)", color: found ? "rgba(255,255,255,0.5)" : "#555", lineHeight: 1 }}>{el.atomicNumber}</span>
+                        <span style={{ fontSize: "clamp(6px,1.5vw,9px)", fontWeight: 700, color: found ? "#fff" : "#555", lineHeight: 1 }}>{el.symbol}</span>
                       </div>
                     );
                   })}
@@ -1426,13 +1432,13 @@ export default function Game() {
                       const el = ELEMENTS.find(e => e.row === r && e.col === c);
                       if (!el) return <div key={i} />;
                       const found = levelCollected.has(el.atomicNumber);
-                      const clr = GROUP_COLORS[el.group];
+                      const vs = getBlockVisualStyle(el.symbol, level);
                       return (
                         <div key={el.atomicNumber}
                           className={`flex flex-col items-center justify-center rounded ${found ? "" : "opacity-15"}`}
-                          style={{ background: found ? clr.fill : "#27272a", aspectRatio: "1" }}>
-                          <span style={{ fontSize: "3px", color: found ? "rgba(255,255,255,0.5)" : "#555", lineHeight: 1 }}>{el.atomicNumber}</span>
-                          <span style={{ fontSize: "5px", fontWeight: 700, color: found ? "#fff" : "#555", lineHeight: 1 }}>{el.symbol}</span>
+                          style={{ background: found ? vs.fillColor : "#27272a", aspectRatio: "1" }}>
+                          <span style={{ fontSize: "clamp(4px,1vw,6px)", color: found ? "rgba(255,255,255,0.5)" : "#555", lineHeight: 1 }}>{el.atomicNumber}</span>
+                          <span style={{ fontSize: "clamp(6px,1.5vw,9px)", fontWeight: 700, color: found ? "#fff" : "#555", lineHeight: 1 }}>{el.symbol}</span>
                         </div>
                       );
                     })}

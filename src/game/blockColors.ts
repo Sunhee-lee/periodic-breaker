@@ -1,22 +1,34 @@
 // ============================================================
-// Element Breaker – Block Color System
-// Colors based on periodic table element families,
-// intensifying with game level (1–7).
+// Element Breaker – Block Color System v2
+// Level = main fill color (strong visual progression)
+// Family = accent/border color (identity preserved)
 // ============================================================
 
-// ── Family palettes: level 1 (darkest) → level 7 (brightest) ──
+// ── Level base colors: strong visual progression 1→7 ──
 
-const FAMILY_PALETTES: Record<string, string[]> = {
-  alkali:         ["#7A2323","#A33030","#C93A36","#E44B42","#F76154","#FF7A66","#FF9B85"],
-  alkalineEarth:  ["#7A4A12","#9D6115","#C77918","#E3921F","#F5AA3A","#FFBF63","#FFD28E"],
-  transition:     ["#1E3C73","#245093","#2A67B8","#3780D8","#5498F0","#74B0FF","#9AC8FF"],
-  postTransition: ["#34437A","#41539A","#5268BF","#637EE0","#7C96F5","#9BB1FF","#BACBFF"],
-  metalloid:      ["#1B5B59","#23716F","#2A8A85","#34A39D","#4CBDB6","#6ED5CF","#98EBE6"],
-  nonmetal:       ["#1E5A2B","#277333","#2E8E3C","#38A947","#4FC15D","#72D97F","#9BEFA4"],
-  halogen:        ["#553073","#6A3891","#8345B5","#9B55D4","#B370EE","#CA95FF","#E0BCFF"],
-  nobleGas:       ["#1E5C71","#24708A","#2A89A8","#33A3C7","#4DBDE0","#75D5F2","#A3EBFF"],
-  lanthanide:     ["#7A2E6A","#98377F","#BC4297","#D955AF","#EE72C4","#FFA1DA","#FFC8EB"],
-  actinide:       ["#7A274B","#9A2F60","#BE3A77","#DB4C90","#F368AA","#FF90C0","#FFBAD8"],
+const LEVEL_BASE_COLORS = [
+  "#5C6B73", // Lv1 — slate gray
+  "#4A90E2", // Lv2 — blue
+  "#2EC4B6", // Lv3 — teal
+  "#8AC926", // Lv4 — lime green
+  "#FFCA3A", // Lv5 — yellow
+  "#FF924C", // Lv6 — orange
+  "#FF595E", // Lv7 — red
+];
+
+// ── Family accent colors: identity via border/glow ──
+
+const FAMILY_ACCENT_COLORS: Record<string, string> = {
+  alkali:         "#D94F4F",
+  alkalineEarth:  "#E39A3B",
+  transition:     "#4D7CFE",
+  postTransition: "#7B8CFF",
+  metalloid:      "#33C3B3",
+  nonmetal:       "#57C84D",
+  halogen:        "#A66CFF",
+  nobleGas:       "#59D9FF",
+  lanthanide:     "#F472D0",
+  actinide:       "#FF6FAE",
 };
 
 // ── Symbol → family mapping ──
@@ -36,7 +48,6 @@ const FAMILY_SYMBOLS: Record<string, string[]> = {
   actinide:       ["Ac","Th","Pa","U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No","Lr"],
 };
 
-// Build reverse map
 for (const [family, symbols] of Object.entries(FAMILY_SYMBOLS)) {
   for (const s of symbols) SYMBOL_FAMILY[s] = family;
 }
@@ -47,7 +58,16 @@ export function getElementFamily(symbol: string): string {
   return SYMBOL_FAMILY[symbol] ?? "nonmetal";
 }
 
-/** Lighten a hex color by amount (0–1). 0.15 = 15% brighter */
+export function getLevelBaseColor(level: number): string {
+  const idx = Math.max(0, Math.min(LEVEL_BASE_COLORS.length - 1, level - 1));
+  return LEVEL_BASE_COLORS[idx];
+}
+
+export function getFamilyAccentColor(symbol: string): string {
+  const family = getElementFamily(symbol);
+  return FAMILY_ACCENT_COLORS[family] ?? "#57C84D";
+}
+
 export function lightenColor(hex: string, amount: number): string {
   const m = hex.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
   if (!m) return hex;
@@ -57,18 +77,10 @@ export function lightenColor(hex: string, amount: number): string {
   return `rgb(${r},${g},${b})`;
 }
 
-/** Convert hex to rgba string */
 export function hexToRgba(hex: string, alpha: number): string {
   const m = hex.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
   if (!m) return `rgba(128,128,128,${alpha})`;
   return `rgba(${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)},${alpha})`;
-}
-
-export function getBlockFillColor(symbol: string, level: number): string {
-  const family = getElementFamily(symbol);
-  const palette = FAMILY_PALETTES[family] ?? FAMILY_PALETTES.nonmetal;
-  const idx = Math.max(0, Math.min(6, level - 1));
-  return palette[idx];
 }
 
 export interface BlockVisualStyle {
@@ -77,24 +89,35 @@ export interface BlockVisualStyle {
   level: number;
   fillColor: string;
   borderColor: string;
+  accentColor: string;
   glowColor: string;
+  symbolGlowColor: string;
   hitFlashColor: string;
   textColor: string;
+  borderWidth: number;
 }
 
 export function getBlockVisualStyle(symbol: string, level: number): BlockVisualStyle {
   const family = getElementFamily(symbol);
-  const fillColor = getBlockFillColor(symbol, level);
+  const fillColor = getLevelBaseColor(level);
+  const accentColor = FAMILY_ACCENT_COLORS[family] ?? "#57C84D";
 
-  // Border: 15-20% brighter than fill
-  const borderColor = lightenColor(fillColor, 0.18);
+  // Border = family accent
+  const borderColor = accentColor;
 
-  // Glow: intensity scales with level
-  const glowAlpha = level <= 2 ? 0.3 : level <= 4 ? 0.45 : 0.65;
+  // Glow based on fill, intensity scales with level
+  const glowAlpha = level <= 2 ? 0.25 : level <= 4 ? 0.4 : 0.6;
   const glowColor = hexToRgba(fillColor, glowAlpha);
 
-  // Hit flash: 40% brighter
+  // Symbol glow = family accent glow
+  const symGlowAlpha = level <= 2 ? 0.3 : level <= 4 ? 0.5 : 0.7;
+  const symbolGlowColor = hexToRgba(accentColor, symGlowAlpha);
+
+  // Hit flash = lighter fill
   const hitFlashColor = lightenColor(fillColor, 0.4);
+
+  // Border thickness scales with level
+  const borderWidth = level <= 2 ? 1 : level <= 4 ? 1.5 : 2;
 
   return {
     symbol,
@@ -102,8 +125,11 @@ export function getBlockVisualStyle(symbol: string, level: number): BlockVisualS
     level,
     fillColor,
     borderColor,
+    accentColor,
     glowColor,
+    symbolGlowColor,
     hitFlashColor,
     textColor: "#F8FAFF",
+    borderWidth,
   };
 }
