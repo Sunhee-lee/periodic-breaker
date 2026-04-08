@@ -1540,6 +1540,7 @@ export default function Game() {
                     </div>
                   </div>
                 )}
+                <div className="h-3" />
                 <button onClick={restartGame}
                   className="px-5 py-2 text-sm sm:text-base text-white font-semibold rounded-lg transition-colors"
                   style={{ background: "linear-gradient(135deg, #5BC0EB, #7DD3FC)", boxShadow: "0 0 12px rgba(91,192,235,0.3)" }}>
