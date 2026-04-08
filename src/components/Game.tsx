@@ -115,6 +115,7 @@ function roundRect(
 // ══════════════════════════════════════════════════════════
 export default function Game() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const touchPadRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<Matter.Engine | null>(null);
   const runnerRef = useRef<Matter.Runner | null>(null);
   const paddleRef = useRef<Matter.Body | null>(null);
@@ -1150,6 +1151,16 @@ export default function Game() {
     canvas.addEventListener("touchmove", onTM, { passive: false });
     canvas.addEventListener("touchend", onTE, { passive: false });
 
+    // Touch pad below canvas — same handlers
+    const tp = touchPadRef.current;
+    if (tp) {
+      tp.addEventListener("mousemove", onMM);
+      tp.addEventListener("mousedown", onMD);
+      tp.addEventListener("touchstart", onTS, { passive: false });
+      tp.addEventListener("touchmove", onTM, { passive: false });
+      tp.addEventListener("touchend", onTE, { passive: false });
+    }
+
     return () => {
       stopBGM();
       cancelAnimationFrame(animRef.current);
@@ -1160,6 +1171,13 @@ export default function Game() {
       canvas.removeEventListener("touchstart", onTS);
       canvas.removeEventListener("touchmove", onTM);
       canvas.removeEventListener("touchend", onTE);
+      if (tp) {
+        tp.removeEventListener("mousemove", onMM);
+        tp.removeEventListener("mousedown", onMD);
+        tp.removeEventListener("touchstart", onTS);
+        tp.removeEventListener("touchmove", onTM);
+        tp.removeEventListener("touchend", onTE);
+      }
     };
   }, [launchBall, resetBall, createBlocks, syncUI, difficulty]);
 
@@ -1500,6 +1518,11 @@ export default function Game() {
           </div>
         )}
       </div>
+
+      {/* Touch pad — extra touch area below canvas for easier paddle control */}
+      <div ref={touchPadRef}
+        className="w-full h-16 sm:h-20 touch-none cursor-none bg-zinc-900/50 rounded-b-lg"
+        style={{ maxWidth: "560px" }} />
     </div>
   );
 }
