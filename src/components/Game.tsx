@@ -37,7 +37,7 @@ const BASE_SPEED = 6;
 // Level configs
 const LEVEL_TIMES = [420, 300, 180, 180, 180, 120, 120]; // L1:7m L2:5m L3-5:3m L6-7:2m
 const LEVEL_SPEED = [BASE_SPEED, BASE_SPEED * 1.2, BASE_SPEED * 1.5, BASE_SPEED * 1.7, BASE_SPEED * 1.7, BASE_SPEED * 1.9, BASE_SPEED * 2.1];
-const LEVEL_PADDLE = [PADDLE_W, PADDLE_W, PADDLE_W, PADDLE_W * 0.8, PADDLE_W * 0.65, PADDLE_W * 0.6, PADDLE_W * 0.55];
+const LEVEL_PADDLE = [PADDLE_W, PADDLE_W, PADDLE_W, PADDLE_W * 0.8, PADDLE_W * 0.65, PADDLE_W * 0.6, PADDLE_W * 0.6];
 // Level color themes
 type LevelTheme = { hueShift: number; tintR: number; tintG: number; tintB: number };
 const LEVEL_THEMES: LevelTheme[] = [
