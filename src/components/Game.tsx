@@ -1294,24 +1294,24 @@ export default function Game() {
 
       {/* HUD */}
       <div className="flex items-center justify-between w-full px-1 sm:px-2 text-xs sm:text-sm">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="flex gap-0.5">
-            {Array.from({ length: LIVES }).map((_, i) => (
-              <span key={i} className={`text-sm sm:text-base transition-colors duration-300 ${
-                i < lives ? "text-blue-400 drop-shadow-[0_0_4px_rgba(96,165,250,0.8)]" : "text-zinc-700"
-              }`}>♥</span>
-            ))}
-          </div>
+        {/* Left: Lives */}
+        <div className="flex gap-0.5 w-1/4">
+          {Array.from({ length: LIVES }).map((_, i) => (
+            <span key={i} className={`text-sm sm:text-base transition-colors duration-300 ${
+              i < lives ? "text-blue-400 drop-shadow-[0_0_4px_rgba(96,165,250,0.8)]" : "text-zinc-700"
+            }`}>♥</span>
+          ))}
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
-          <span className="text-xs font-bold text-purple-400">Lv.{level}</span>
-          <span className={`text-base sm:text-lg font-mono font-bold ${timeLeft <= 30 ? "text-red-400" : "text-zinc-300"}`}>
+        {/* Center: Score */}
+        <div className="flex items-center justify-center gap-1 w-2/4">
+          <span className="text-base sm:text-lg font-mono font-bold text-indigo-400">{score.toLocaleString()}</span>
+        </div>
+        {/* Right: Time + Level */}
+        <div className="flex items-center justify-end gap-2 w-1/4">
+          <span className={`text-sm font-mono font-bold ${timeLeft <= 30 ? "text-red-400" : "text-zinc-300"}`}>
             {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")}
           </span>
-          <div className="flex items-center gap-1">
-            <span className="text-zinc-400 uppercase tracking-wide">Score</span>
-            <span className="text-base sm:text-lg font-mono font-bold text-indigo-400">{score.toLocaleString()}</span>
-          </div>
+          <span className="text-xs font-bold text-purple-400">Lv.{level}</span>
         </div>
       </div>
 
@@ -1356,7 +1356,7 @@ export default function Game() {
         {paused && (
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-10 flex flex-col items-center p-3">
             <p className="text-xl font-bold text-zinc-200 mb-1">PAUSED</p>
-            <p className="text-xs text-zinc-500 mb-2">발견: {levelCollected.size}/118</p>
+            <p className="text-xs text-zinc-500 mb-4">발견: {levelCollected.size}/118</p>
             {/* Same periodic table as game over/clear */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(18, 1fr)", gap: "1px" }} className="mb-2 w-full max-w-full overflow-hidden">
               {Array.from({ length: 9 * 18 }, (_, i) => {
@@ -1377,7 +1377,7 @@ export default function Game() {
             </div>
             <button onClick={togglePause}
               className="px-5 py-2 text-sm bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-colors">
-              재시작
+              RESTART
             </button>
           </div>
         )}
@@ -1484,7 +1484,7 @@ export default function Game() {
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="text-zinc-500">Lv.{r.level ?? 1}</span>
-                            <span className="font-mono font-bold text-indigo-400">{r.score.toLocaleString()}</span>
+                            <span className="font-mono font-bold text-indigo-400 w-16 text-right">{r.score.toLocaleString()}</span>
                           </div>
                         </div>
                       ))}
