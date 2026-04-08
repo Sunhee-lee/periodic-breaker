@@ -1192,7 +1192,7 @@ export default function Game() {
         <div className="w-full max-w-[480px] max-h-[70vh] overflow-y-auto">
           {/* Header */}
           <div className="w-full flex items-center justify-between px-4 py-1.5 text-[11px] text-zinc-500 border-b border-zinc-700">
-            <div className="flex items-center gap-3"><span className="w-6">#</span><span>이름</span></div>
+            <div className="flex items-center gap-3"><span className="w-6">순위</span><span>이름</span></div>
             <div className="flex items-center gap-6"><span>레벨</span><span className="w-16 text-right">점수</span></div>
           </div>
           <div className="bg-zinc-900 rounded-lg border border-zinc-700 overflow-hidden">
@@ -1295,12 +1295,11 @@ export default function Game() {
       {/* HUD */}
       <div className="flex items-center justify-between w-full px-1 sm:px-2 text-xs sm:text-sm">
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <span className="text-zinc-400 uppercase tracking-wide">Lives</span>
-          <div className="flex gap-1">
+          <div className="flex gap-0.5">
             {Array.from({ length: LIVES }).map((_, i) => (
-              <span key={i} className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-colors duration-300 ${
-                i < lives ? "bg-pink-500 shadow-[0_0_8px_rgba(244,114,182,0.6)]" : "bg-zinc-700"
-              }`} />
+              <span key={i} className={`text-sm sm:text-base transition-colors duration-300 ${
+                i < lives ? "text-blue-400 drop-shadow-[0_0_4px_rgba(96,165,250,0.8)]" : "text-zinc-700"
+              }`}>♥</span>
             ))}
           </div>
         </div>
