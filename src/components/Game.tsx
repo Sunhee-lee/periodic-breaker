@@ -1316,11 +1316,11 @@ export default function Game() {
               return (
                 <svg key={i} width="19" height="19" viewBox="0 0 24 24" className="transition-opacity duration-300"
                   style={{ opacity: active ? 1 : 0.18 }}>
-                  <circle cx="12" cy="12" r="3" fill={active ? "#63F5C8" : "#555"} />
-                  {active && <circle cx="12" cy="12" r="3" fill="#63F5C8" style={{ filter: "drop-shadow(0 0 5px rgba(99,245,200,0.6))" }} />}
-                  <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke={active ? "#B8FFE8" : "#444"} strokeWidth="1.2" opacity={active ? 0.7 : 0.3} />
-                  <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke={active ? "#B8FFE8" : "#444"} strokeWidth="1.2" opacity={active ? 0.7 : 0.3} transform="rotate(60 12 12)" />
-                  <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke={active ? "#B8FFE8" : "#444"} strokeWidth="1.2" opacity={active ? 0.7 : 0.3} transform="rotate(-60 12 12)" />
+                  <circle cx="12" cy="12" r="3" fill={active ? "#5BC0EB" : "#555"} />
+                  {active && <circle cx="12" cy="12" r="3" fill="#5BC0EB" style={{ filter: "drop-shadow(0 0 5px rgba(91,192,235,0.6))" }} />}
+                  <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke={active ? "#A8E4FF" : "#444"} strokeWidth="1.2" opacity={active ? 0.7 : 0.3} />
+                  <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke={active ? "#A8E4FF" : "#444"} strokeWidth="1.2" opacity={active ? 0.7 : 0.3} transform="rotate(60 12 12)" />
+                  <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke={active ? "#A8E4FF" : "#444"} strokeWidth="1.2" opacity={active ? 0.7 : 0.3} transform="rotate(-60 12 12)" />
                 </svg>
               );
             })}
