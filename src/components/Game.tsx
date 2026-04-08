@@ -854,15 +854,15 @@ export default function Game() {
       ctx.fillRect(0, 0, GW, GH);
 
       // Grid
-      ctx.strokeStyle = "rgba(99,102,241,0.06)";
+      ctx.strokeStyle = "rgba(91,192,235,0.06)";
       ctx.lineWidth = 1;
       for (let x = 0; x < GW; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, GH); ctx.stroke(); }
       for (let y = 0; y < GH; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(GW, y); ctx.stroke(); }
 
       // Border
       ctx.shadowBlur = 15;
-      ctx.shadowColor = "rgba(99,102,241,0.4)";
-      ctx.strokeStyle = "rgba(99,102,241,0.3)";
+      ctx.shadowColor = "rgba(91,192,235,0.4)";
+      ctx.strokeStyle = "rgba(91,192,235,0.3)";
       ctx.lineWidth = 2;
       ctx.strokeRect(1, 1, GW - 2, GH - 2);
       ctx.shadowBlur = 0;
@@ -981,7 +981,7 @@ export default function Game() {
         const py = p.position.y - PADDLE_H / 2;
 
         ctx.shadowBlur = 20;
-        ctx.shadowColor = "rgba(99,102,241,0.6)";
+        ctx.shadowColor = "rgba(91,192,235,0.6)";
         const grad = ctx.createLinearGradient(px, py, px, py + PADDLE_H);
         grad.addColorStop(0, "#818cf8");
         grad.addColorStop(1, "#6366f1");
@@ -1359,7 +1359,7 @@ export default function Game() {
       </div>
 
       {/* Canvas */}
-      <div className="relative rounded-lg overflow-hidden shadow-[0_0_40px_rgba(99,102,241,0.15)] w-full">
+      <div className="relative rounded-lg overflow-hidden shadow-[0_0_40px_rgba(91,192,235,0.15)] w-full">
         <canvas ref={canvasRef} width={GW} height={GH}
           className="block w-full h-auto cursor-none touch-none"
           style={{ aspectRatio: `${GW}/${GH}` }} />
@@ -1534,7 +1534,7 @@ export default function Game() {
                   </div>
                 )}
                 <button onClick={restartGame}
-                  className="px-5 py-2 text-sm sm:text-base bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-colors shadow-[0_0_20px_rgba(99,102,241,0.3)]">
+                  className="px-5 py-2 text-sm sm:text-base bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-colors shadow-[0_0_20px_rgba(91,192,235,0.3)]">
                   RESTART
                 </button>
               </div>
