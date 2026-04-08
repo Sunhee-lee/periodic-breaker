@@ -123,6 +123,7 @@ export default function Game() {
 
   const [bgmVol, setBgmVol] = useState(0.3);
   const [showVolume, setShowVolume] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [playerName, setPlayerName] = useState("");
   const [rankSaved, setRankSaved] = useState(false);
   const [rankings, setRankings] = useState<RankEntry[]>([]);
@@ -1260,17 +1261,28 @@ export default function Game() {
               className="transition-all active:scale-95 hover:brightness-110">
               <img src="/Rank_image.png" alt="랭킹" className="w-[25vw] max-w-[120px]" />
             </button>
-            <button onClick={() => setShowVolume(!showVolume)}
+            <button onClick={() => setShowSettings(!showSettings)}
               className="transition-all active:scale-95 hover:brightness-110">
               <img src="/Setting_image.png" alt="설정" className="w-[25vw] max-w-[120px]" />
             </button>
           </div>
-          {showVolume && (
-            <div className="flex items-center gap-2 bg-black/50 rounded-lg px-3 py-2 backdrop-blur-sm">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
-              <input type="range" min="0" max="100" value={Math.round(bgmVol * 100)}
-                onChange={(e) => { const v = Number(e.target.value) / 100; setBgmVol(v); setBGMVolume(v); }}
-                className="w-28 h-1 accent-amber-500" />
+          {/* Start screen settings menu */}
+          {showSettings && (
+            <div className="flex flex-col gap-2 w-[70%] max-w-[260px] p-4 rounded-xl" style={{ background: "rgba(20,25,50,0.9)", border: "1px solid rgba(180,210,255,0.2)" }}>
+              <p className="text-center text-sm font-bold mb-1" style={{ color: "#DCE7FF" }}>설정</p>
+              <button onClick={() => { setBGMVolume(bgmVol > 0 ? 0 : 0.3); setBgmVol(bgmVol > 0 ? 0 : 0.3); }}
+                className="flex items-center justify-between px-3 py-2 rounded-lg text-sm" style={{ background: "rgba(30,40,80,0.5)", color: "#DCE7FF" }}>
+                <span>배경음</span>
+                <span style={{ color: bgmVol > 0 ? "#63F5C8" : "#FF6B6B" }}>{bgmVol > 0 ? "ON" : "OFF"}</span>
+              </button>
+              <button className="flex items-center justify-between px-3 py-2 rounded-lg text-sm" style={{ background: "rgba(30,40,80,0.5)", color: "#DCE7FF" }}>
+                <span>효과음</span>
+                <span style={{ color: "#63F5C8" }}>ON</span>
+              </button>
+              <button onClick={() => setShowSettings(false)}
+                className="text-xs text-center mt-1" style={{ color: "rgba(220,231,255,0.4)" }}>
+                닫기
+              </button>
             </div>
           )}
 
@@ -1295,42 +1307,31 @@ export default function Game() {
       {/* HUD */}
       {/* ── HUD ── */}
       <div className="flex items-start justify-between w-full px-2 py-1">
-        {/* Left: Lives (atom icons) + control buttons */}
+        {/* Left: Lives (atom icons) + settings/pause */}
         <div className="flex flex-col gap-1.5">
-          {/* Atom lives */}
+          {/* Atom lives — mint neon */}
           <div className="flex gap-1">
             {Array.from({ length: LIVES }).map((_, i) => {
               const active = i < lives;
               return (
                 <svg key={i} width="19" height="19" viewBox="0 0 24 24" className="transition-opacity duration-300"
                   style={{ opacity: active ? 1 : 0.18 }}>
-                  {/* Nucleus */}
-                  <circle cx="12" cy="12" r="3" fill={active ? "#7FB3FF" : "#555"} />
-                  {active && <circle cx="12" cy="12" r="3" fill="#7FB3FF" style={{ filter: "drop-shadow(0 0 4px rgba(127,179,255,0.6))" }} />}
-                  {/* Orbits */}
-                  <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke={active ? "#B9D7FF" : "#444"} strokeWidth="1" opacity={active ? 0.6 : 0.3} />
-                  <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke={active ? "#B9D7FF" : "#444"} strokeWidth="1" opacity={active ? 0.6 : 0.3} transform="rotate(60 12 12)" />
-                  <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke={active ? "#B9D7FF" : "#444"} strokeWidth="1" opacity={active ? 0.6 : 0.3} transform="rotate(-60 12 12)" />
+                  <circle cx="12" cy="12" r="3" fill={active ? "#63F5C8" : "#555"} />
+                  {active && <circle cx="12" cy="12" r="3" fill="#63F5C8" style={{ filter: "drop-shadow(0 0 5px rgba(99,245,200,0.6))" }} />}
+                  <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke={active ? "#B8FFE8" : "#444"} strokeWidth="1.2" opacity={active ? 0.7 : 0.3} />
+                  <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke={active ? "#B8FFE8" : "#444"} strokeWidth="1.2" opacity={active ? 0.7 : 0.3} transform="rotate(60 12 12)" />
+                  <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke={active ? "#B8FFE8" : "#444"} strokeWidth="1.2" opacity={active ? 0.7 : 0.3} transform="rotate(-60 12 12)" />
                 </svg>
               );
             })}
           </div>
-          {/* Control icons */}
+          {/* Settings + Pause */}
           {launched && (
             <div className="flex items-center gap-1">
-              <button onClick={() => { stopBGM(); restartGame(); setDifficulty(null); }}
+              <button onClick={() => setShowSettings(!showSettings)}
                 className="w-6 h-6 flex items-center justify-center rounded active:brightness-150"
                 style={{ background: "rgba(30,40,80,0.45)", border: "1px solid rgba(180,210,255,0.28)" }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#DCE7FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              </button>
-              <button onClick={() => setShowVolume(!showVolume)}
-                className="w-6 h-6 flex items-center justify-center rounded active:brightness-150"
-                style={{ background: "rgba(30,40,80,0.45)", border: "1px solid rgba(180,210,255,0.28)" }}>
-                {bgmVol > 0 ? (
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#DCE7FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
-                ) : (
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" stroke="#DCE7FF"/><line x1="22" y1="9" x2="16" y2="15" stroke="#FF6B6B"/><line x1="16" y1="9" x2="22" y2="15" stroke="#FF6B6B"/></svg>
-                )}
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#DCE7FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
               </button>
               {!gameOver && !stageClear && !paused ? (
                 <button onClick={togglePause}
@@ -1339,11 +1340,6 @@ export default function Game() {
                   <svg width="8" height="8" viewBox="0 0 14 14" fill="#DCE7FF"><rect x="2" y="1" width="3.5" height="12"/><rect x="8.5" y="1" width="3.5" height="12"/></svg>
                 </button>
               ) : <div className="w-6" />}
-              {showVolume && (
-                <input type="range" min="0" max="100" value={Math.round(bgmVol * 100)}
-                  onChange={(e) => { const v = Number(e.target.value) / 100; setBgmVol(v); setBGMVolume(v); }}
-                  className="w-14 h-1 accent-blue-400" />
-              )}
             </div>
           )}
         </div>
@@ -1356,12 +1352,9 @@ export default function Game() {
               {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")}
             </span>
           </div>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", color: "rgba(220,231,255,0.5)", lineHeight: 1 }}>SCORE</span>
-            <span style={{ fontSize: "22px", fontWeight: 800, lineHeight: 1, color: "#F4F7FF", textShadow: "0 0 8px rgba(120,160,255,0.28)", fontVariantNumeric: "tabular-nums", minWidth: "80px", textAlign: "right" as const, display: "inline-block" }}>
-              {score.toLocaleString()}
-            </span>
-          </div>
+          <span style={{ fontSize: "22px", fontWeight: 800, lineHeight: 1, color: "#F4F7FF", textShadow: "0 0 8px rgba(120,160,255,0.28)", fontVariantNumeric: "tabular-nums", minWidth: "80px", textAlign: "right" as const, display: "inline-block", marginTop: "4px" }}>
+            {score.toLocaleString()}
+          </span>
         </div>
       </div>
 
@@ -1370,6 +1363,36 @@ export default function Game() {
         <canvas ref={canvasRef} width={GW} height={GH}
           className="block w-full h-auto cursor-none touch-none"
           style={{ aspectRatio: `${GW}/${GH}` }} />
+
+        {/* Settings menu overlay */}
+        {showSettings && (
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-20 flex items-center justify-center">
+            <div className="flex flex-col gap-2 w-[70%] max-w-[260px] p-4 rounded-xl" style={{ background: "rgba(20,25,50,0.9)", border: "1px solid rgba(180,210,255,0.2)" }}>
+              <p className="text-center text-sm font-bold mb-1" style={{ color: "#DCE7FF" }}>설정</p>
+              <button onClick={() => { setBGMVolume(bgmVol > 0 ? 0 : 0.3); setBgmVol(bgmVol > 0 ? 0 : 0.3); }}
+                className="flex items-center justify-between px-3 py-2 rounded-lg text-sm" style={{ background: "rgba(30,40,80,0.5)", color: "#DCE7FF" }}>
+                <span>배경음</span>
+                <span style={{ color: bgmVol > 0 ? "#63F5C8" : "#FF6B6B" }}>{bgmVol > 0 ? "ON" : "OFF"}</span>
+              </button>
+              <button className="flex items-center justify-between px-3 py-2 rounded-lg text-sm" style={{ background: "rgba(30,40,80,0.5)", color: "#DCE7FF" }}>
+                <span>효과음</span>
+                <span style={{ color: "#63F5C8" }}>ON</span>
+              </button>
+              <button onClick={() => { setShowSettings(false); restartGame(); }}
+                className="flex items-center justify-center px-3 py-2 rounded-lg text-sm" style={{ background: "rgba(30,40,80,0.5)", color: "#DCE7FF" }}>
+                다시 시작
+              </button>
+              <button onClick={() => { setShowSettings(false); stopBGM(); restartGame(); setDifficulty(null); }}
+                className="flex items-center justify-center px-3 py-2 rounded-lg text-sm" style={{ background: "rgba(30,40,80,0.5)", color: "#DCE7FF" }}>
+                홈으로 가기
+              </button>
+              <button onClick={() => setShowSettings(false)}
+                className="text-xs text-center mt-1" style={{ color: "rgba(220,231,255,0.4)" }}>
+                닫기
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Pause overlay — with periodic table */}
         {paused && (
