@@ -158,6 +158,7 @@ export default function Game() {
   const shakeRef = useRef(0);
   const stallFramesRef = useRef(0);
   const sfxOnRef = useRef(true);
+  const wasPausedRef = useRef(false); // was game paused when settings opened?
   const levelRef = useRef(1);
   const timerStartRef = useRef(0); // performance.now() when launched // remaining shake frames
   const collectedRef = useRef<Set<number>>(new Set());
@@ -1339,8 +1340,15 @@ export default function Game() {
               <button onClick={() => {
                 const opening = !showSettings;
                 setShowSettings(opening);
-                if (opening && runnerRef.current) Matter.Runner.stop(runnerRef.current);
-                if (!opening && runnerRef.current && engineRef.current) Matter.Runner.run(runnerRef.current, engineRef.current);
+                if (opening) {
+                  // Track whether we were paused before opening settings
+                  wasPausedRef.current = pausedRef.current;
+                  // If currently paused, hide pause overlay (keep runner stopped)
+                  if (pausedRef.current) setPaused(false);
+                  // Stop runner if game was running
+                  if (!pausedRef.current && runnerRef.current) Matter.Runner.stop(runnerRef.current);
+                }
+                // closing via button is handled by 닫기 button
               }}
                 className="w-6 h-6 flex items-center justify-center rounded active:brightness-150"
                 style={{ background: "rgba(30,40,80,0.45)", border: "1px solid rgba(180,210,255,0.28)" }}>
@@ -1399,7 +1407,16 @@ export default function Game() {
                 className="flex items-center justify-center px-3 py-2 rounded-lg text-sm" style={{ background: "rgba(30,40,80,0.5)", color: "#DCE7FF" }}>
                 홈으로 가기
               </button>
-              <button onClick={() => { setShowSettings(false); if (runnerRef.current && engineRef.current) Matter.Runner.run(runnerRef.current, engineRef.current); }}
+              <button onClick={() => {
+                setShowSettings(false);
+                if (wasPausedRef.current) {
+                  // Restore paused state (runner stays stopped)
+                  pausedRef.current = true;
+                  setPaused(true);
+                } else if (runnerRef.current && engineRef.current) {
+                  Matter.Runner.run(runnerRef.current, engineRef.current);
+                }
+              }}
                 className="text-xs text-center mt-1" style={{ color: "rgba(220,231,255,0.4)" }}>
                 닫기
               </button>
